@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import ForgotPassword from './components/auth/ForgotPassword';
+import Dashboard from './pages/Dashboard';
 import './App.css';
 
 function App() {
@@ -17,10 +18,15 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           
+          {/* Dashboard Route */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          
           {/* TODO: Add more routes */}
-          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
           {/* <Route path="/doctors" element={<Doctors />} /> */}
+          {/* <Route path="/patients" element={<Patients />} /> */}
           {/* <Route path="/appointments" element={<Appointments />} /> */}
+          {/* <Route path="/services" element={<Services />} /> */}
+          {/* <Route path="/messages" element={<Messages />} /> */}
         </Routes>
       </div>
     </Router>
