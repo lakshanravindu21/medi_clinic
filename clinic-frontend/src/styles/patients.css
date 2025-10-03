@@ -1,0 +1,133 @@
+.patients-content {
+  padding: 2rem;
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 70px);
+}
+
+.patients-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.patients-header h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+  display: inline-block;
+  margin-right: 1rem;
+}
+
+.add-patient-btn {
+  background-color: #4F46E5;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-patient-btn:hover {
+  background-color: #4338ca;
+}
+
+.patients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.patient-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.patient-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.patient-card-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.patient-info {
+  position: relative;
+}
+
+.patient-info img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.patient-details {
+  flex: 1;
+}
+
+.patient-details h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 0.25rem 0;
+}
+
+.patient-meta {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.patient-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.info-icon {
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.info-label {
+  color: #6b7280;
+}
+
+.info-value {
+  color: #1a1a1a;
+}
+
+.load-more-btn {
+  display: block;
+  margin: 2rem auto;
+  padding: 0.75rem 2rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.load-more-btn:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}

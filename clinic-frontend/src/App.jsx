@@ -3,6 +3,10 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import ForgotPassword from './components/auth/ForgotPassword';
 import Dashboard from './pages/Dashboard';
+import Doctors from './pages/Doctors';
+import Patients from './pages/Patients';
+import Appointments from './pages/Appointments';
+import Messages from './pages/Messages';
 import OTPVerification from './components/auth/OTPVerification';
 import ResetPassword from './components/auth/ResetPassword';
 import ResetSuccess from './components/auth/ResetSuccess';
@@ -20,15 +24,16 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/verify-otp" element={<OTPVerification />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/reset-success" element={<ResetSuccess />} />
           
-          {/* TODO: Add more routes */}
-          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
-          {/* <Route path="/doctors" element={<Doctors />} /> */}
-          {/* <Route path="/appointments" element={<Appointments />} /> */}
+          {/* App Routes */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/doctors" element={<Doctors />} />
+          <Route path="/patients" element={<Patients />} />
+          <Route path="/appointments" element={<Appointments />} />
+          <Route path="/messages" element={<Messages />} />
         </Routes>
       </div>
     </Router>
