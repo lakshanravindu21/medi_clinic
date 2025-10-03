@@ -5,6 +5,7 @@ const {
   login,
   getMe,
   forgotPassword,
+  verifyOTP,
   resetPassword
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
@@ -14,6 +15,7 @@ const { validateRegister, validateLogin } = require('../middleware/validation');
 router.post('/register', validateRegister, register);
 router.post('/login', validateLogin, login);
 router.post('/forgot-password', forgotPassword);
+router.post('/verify-otp', verifyOTP);
 router.post('/reset-password', resetPassword);
 
 // Protected routes

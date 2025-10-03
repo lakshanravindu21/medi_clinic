@@ -11,7 +11,11 @@
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:studio": "prisma studio"
   },
-  "keywords": ["clinic", "appointment", "booking"],
+  "keywords": [
+    "clinic",
+    "appointment",
+    "booking"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",

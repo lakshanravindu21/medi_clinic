@@ -3,6 +3,9 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import ForgotPassword from './components/auth/ForgotPassword';
 import Dashboard from './pages/Dashboard';
+import OTPVerification from './components/auth/OTPVerification';
+import ResetPassword from './components/auth/ResetPassword';
+import ResetSuccess from './components/auth/ResetSuccess';
 import './App.css';
 
 function App() {
@@ -17,16 +20,15 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          
-          {/* Dashboard Route */}
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/verify-otp" element={<OTPVerification />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-success" element={<ResetSuccess />} />
           
           {/* TODO: Add more routes */}
+          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
           {/* <Route path="/doctors" element={<Doctors />} /> */}
-          {/* <Route path="/patients" element={<Patients />} /> */}
           {/* <Route path="/appointments" element={<Appointments />} /> */}
-          {/* <Route path="/services" element={<Services />} /> */}
-          {/* <Route path="/messages" element={<Messages />} /> */}
         </Routes>
       </div>
     </Router>

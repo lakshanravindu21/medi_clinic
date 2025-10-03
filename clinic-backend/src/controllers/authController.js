@@ -1,8 +1,38 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const { generateToken, generateResetToken } = require('../utils/jwt');
+const nodemailer = require('nodemailer');
 
 const prisma = new PrismaClient();
+
+// Setup Nodemailer transporter
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
+  secure: false, // use TLS for port 587
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// Helper to send OTP email
+const sendOTPEmail = async (to, otp) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to,
+    subject: 'Your Password Reset OTP',
+    text: `Your OTP code is: ${otp}. It will expire in 10 minutes.`,
+    html: `
+      <h2>Password Reset Request</h2>
+      <p>Your OTP code is:</p>
+      <h1 style="color:#2c7be5;letter-spacing:3px;">${otp}</h1>
+      <p>This code will expire in <b>10 minutes</b>. If you did not request this, please ignore this email.</p>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -151,35 +181,64 @@ const forgotPassword = async (req, res, next) => {
       // Don't reveal if user exists or not
       return res.json({
         success: true,
-        message: 'If an account exists with this email, a password reset link has been sent'
+        message: 'If an account exists with this email, an OTP has been sent'
       });
     }
 
-    // Generate reset token
-    const resetToken = generateResetToken();
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // Save reset token to database
+    // Save OTP to database
     await prisma.passwordReset.create({
       data: {
         email: user.email,
-        token: resetToken,
-        expiresAt: new Date(Date.now() + 3600000) // 1 hour
+        token: otp,
+        expiresAt: new Date(Date.now() + 600000) // 10 minutes
       }
     });
 
-    // TODO: Send email with reset link
-    // For now, just return the token (in production, send via email)
-    console.log('Password Reset Token:', resetToken);
-    console.log('Reset Link:', `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`);
+    // Send email with OTP
+    await sendOTPEmail(user.email, otp);
 
     res.json({
       success: true,
-      message: 'If an account exists with this email, a password reset link has been sent',
-      // Remove this in production - only for testing
-      ...(process.env.NODE_ENV === 'development' && { 
-        token: resetToken,
-        resetLink: `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`
-      })
+      message: 'OTP has been sent to your email'
+    });
+  } catch (error) {
+    console.error('Forgot Password Error:', error);
+    next(error);
+  }
+};
+
+// @desc    Verify OTP
+// @route   POST /api/auth/verify-otp
+// @access  Public
+const verifyOTP = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+
+    // Find valid OTP
+    const resetRecord = await prisma.passwordReset.findFirst({
+      where: {
+        email,
+        token: otp,
+        used: false,
+        expiresAt: {
+          gte: new Date()
+        }
+      }
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired OTP'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'OTP verified successfully'
     });
   } catch (error) {
     next(error);
@@ -191,12 +250,13 @@ const forgotPassword = async (req, res, next) => {
 // @access  Public
 const resetPassword = async (req, res, next) => {
   try {
-    const { token, newPassword } = req.body;
+    const { email, otp, newPassword } = req.body;
 
-    // Find valid reset token
+    // Find valid OTP
     const resetRecord = await prisma.passwordReset.findFirst({
       where: {
-        token,
+        email,
+        token: otp,
         used: false,
         expiresAt: {
           gte: new Date()
@@ -207,7 +267,7 @@ const resetPassword = async (req, res, next) => {
     if (!resetRecord) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token'
+        message: 'Invalid or expired OTP'
       });
     }
 
@@ -220,7 +280,7 @@ const resetPassword = async (req, res, next) => {
       data: { password: hashedPassword }
     });
 
-    // Mark token as used
+    // Mark OTP as used
     await prisma.passwordReset.update({
       where: { id: resetRecord.id },
       data: { used: true }
@@ -240,5 +300,6 @@ module.exports = {
   login,
   getMe,
   forgotPassword,
+  verifyOTP,
   resetPassword
 };

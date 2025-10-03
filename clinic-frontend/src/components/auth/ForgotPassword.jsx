@@ -21,6 +21,11 @@ const ForgotPassword = () => {
       const { authAPI } = await import('../../utils/api');
       await authAPI.forgotPassword(email);
       setSuccess(true);
+      
+      // Redirect to OTP page after 2 seconds
+      setTimeout(() => {
+        navigate('/verify-otp', { state: { email } });
+      }, 2000);
     } catch (err) {
       setError(err.message || 'Failed to send reset email');
     } finally {
@@ -29,7 +34,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="auth-container small-auth"> {/* same container as Register/Login */}
+    <div className="auth-container">
       <div className="auth-left">
         <img src={doctorImage} alt="Doctor" className="auth-image" />
       </div>
@@ -40,7 +45,12 @@ const ForgotPassword = () => {
           <p className="auth-subtitle">No worries, we'll send you reset instructions</p>
           
           <form onSubmit={handleSubmit} className="auth-form">
-            {error && <div className="error-message">{error}</div>}
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
+            
             {success && (
               <div className="success-message">
                 Password reset instructions have been sent to your email!
