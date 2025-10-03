@@ -37,7 +37,7 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container small-auth"> {/* same container size as Register */}
       <div className="auth-left">
         <img src={doctorImage} alt="Doctor" className="auth-image" />
       </div>
@@ -48,11 +48,7 @@ const Login = () => {
           <p className="auth-subtitle">Please enter below details to access the dashboard</p>
           
           <form onSubmit={handleSubmit} className="auth-form">
-            {error && (
-              <div className="error-message">
-                {error}
-              </div>
-            )}
+            {error && <div className="error-message">{error}</div>}
             
             <div className="form-group">
               <label htmlFor="email">Email Address</label>
@@ -91,7 +87,7 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="form-options">
+            <div className="terms-wrapper form-options">
               <label className="checkbox-label">
                 <input
                   type="checkbox"

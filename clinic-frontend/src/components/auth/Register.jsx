@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AiOutlineUser, AiOutlineMail, AiOutlineLock, AiOutlineEyeInvisible, AiOutlineEye } from 'react-icons/ai';
 import doctorImage from '../../assets/doctor.jpg';
@@ -14,19 +14,31 @@ const Register = () => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError('');
+        setSuccess('');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, success]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     
     if (password !== confirmPassword) {
-      setError('Passwords do not match!');
+      setError('❌ Passwords do not match!');
       return;
     }
 
     if (!agreeToTerms) {
-      setError('Please agree to the Terms of Service and Privacy Policy');
+      setError('⚠️ Please agree to the Terms of Service and Privacy Policy');
       return;
     }
 
@@ -40,21 +52,21 @@ const Register = () => {
         password 
       });
       
-      // Auto login after registration
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
       
-      // Navigate to dashboard
-      navigate('/dashboard');
+      setSuccess('✅ Registration successful! Redirecting...');
+      
+      setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
+      setError(err.message || '❌ Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container small-auth"> 
       <div className="auth-left">
         <img src={doctorImage} alt="Doctor" className="auth-image" />
       </div>
@@ -65,14 +77,11 @@ const Register = () => {
           <p className="auth-subtitle">Please enter your details to create account</p>
           
           <form onSubmit={handleSubmit} className="auth-form">
-            {error && (
-              <div className="error-message">
-                {error}
-              </div>
-            )}
+            {error && <div className="error-message">{error}</div>}
+            {success && <div className="success-message">{success}</div>}
             
             <div className="form-group">
-              <label htmlFor="fullName">Full Name</label>
+              <label htmlFor="fullName" className="form-label">Full Name</label>
               <div className="input-wrapper">
                 <AiOutlineUser className="input-icon" />
                 <input
@@ -87,7 +96,7 @@ const Register = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="email">Email Address</label>
+              <label htmlFor="email" className="form-label">Email Address</label>
               <div className="input-wrapper">
                 <AiOutlineMail className="input-icon" />
                 <input
@@ -102,7 +111,7 @@ const Register = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password" className="form-label">Password</label>
               <div className="input-wrapper">
                 <AiOutlineLock className="input-icon" />
                 <input
@@ -124,7 +133,7 @@ const Register = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm Password</label>
+              <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
               <div className="input-wrapper">
                 <AiOutlineLock className="input-icon" />
                 <input
