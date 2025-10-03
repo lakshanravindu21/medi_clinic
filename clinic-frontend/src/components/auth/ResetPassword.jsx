@@ -49,71 +49,73 @@ const ResetPassword = () => {
 
   return (
     <div className="auth-container">
-      <div className="auth-left">
-        <img src={doctorImage} alt="Doctor" className="auth-image" />
-      </div>
-
-      <div className="auth-right">
-        <div className="auth-form-wrapper">
-          <h1 className="auth-title">Reset Password</h1>
-          <p className="auth-subtitle">Please enter your new password</p>
-
-          <form onSubmit={handleSubmit} className="auth-form">
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="form-group">
-              <label htmlFor="newPassword">New Password</label>
-              <div className="input-wrapper">
-                <AiOutlineLock className="input-icon" />
-                <input
-                  type={showNewPassword ? 'text' : 'password'}
-                  id="newPassword"
-                  placeholder="Enter new password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                >
-                  {showNewPassword ? <AiOutlineEye /> : <AiOutlineEyeInvisible />}
-                </button>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm Password</label>
-              <div className="input-wrapper">
-                <AiOutlineLock className="input-icon" />
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  id="confirmPassword"
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? <AiOutlineEye /> : <AiOutlineEyeInvisible />}
-                </button>
-              </div>
-            </div>
-
-            <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? 'Resetting...' : 'Reset Password'}
-            </button>
-          </form>
+      <div className="small-auth">
+        <div className="auth-left">
+          <img src={doctorImage} alt="Doctor" className="auth-image" />
         </div>
 
-        <footer className="auth-copyright">
-          Copyright @2025 - Fuchsius
-        </footer>
+        <div className="auth-right">
+          <div className="auth-form-wrapper">
+            <h1 className="auth-title">Reset Password</h1>
+            <p className="auth-subtitle">Please enter your new password</p>
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              {error && <div className="error-message">{error}</div>}
+
+              <div className="form-group">
+                <label htmlFor="newPassword">New Password</label>
+                <div className="input-wrapper">
+                  <AiOutlineLock className="input-icon" />
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    id="newPassword"
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? <AiOutlineEye /> : <AiOutlineEyeInvisible />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="confirmPassword">Confirm Password</label>
+                <div className="input-wrapper">
+                  <AiOutlineLock className="input-icon" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <AiOutlineEye /> : <AiOutlineEyeInvisible />}
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" className="auth-button" disabled={loading}>
+                {loading ? 'Resetting...' : 'Reset Password'}
+              </button>
+            </form>
+          </div>
+
+          <footer className="auth-copyright">
+            Copyright @2025 - Fuchsius
+          </footer>
+        </div>
       </div>
     </div>
   );

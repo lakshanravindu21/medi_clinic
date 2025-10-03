@@ -1,3 +1,4 @@
+// Login.jsx
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AiOutlineMail, AiOutlineLock, AiOutlineEyeInvisible, AiOutlineEye } from 'react-icons/ai';
@@ -37,88 +38,93 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container small-auth"> {/* same container size as Register */}
-      <div className="auth-left">
-        <img src={doctorImage} alt="Doctor" className="auth-image" />
-      </div>
-      
-      <div className="auth-right">
-        <div className="auth-form-wrapper">
-          <h1 className="auth-title">Sign In</h1>
-          <p className="auth-subtitle">Please enter below details to access the dashboard</p>
-          
-          <form onSubmit={handleSubmit} className="auth-form">
-            {error && <div className="error-message">{error}</div>}
-            
-            <div className="form-group">
-              <label htmlFor="email">Email Address</label>
-              <div className="input-wrapper">
-                <AiOutlineMail className="input-icon" />
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="Enter Email Address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="input-wrapper">
-                <AiOutlineLock className="input-icon" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  placeholder="************"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <AiOutlineEye /> : <AiOutlineEyeInvisible />}
-                </button>
-              </div>
-            </div>
-
-            <div className="terms-wrapper form-options">
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                />
-                <span className="checkbox-custom"></span>
-                Remember Me
-              </label>
-              <Link to="/forgot-password" className="forgot-link">
-                Forgot password?
-              </Link>
-            </div>
-
-            <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? 'Logging in...' : 'Login'}
-            </button>
-
-            <div className="auth-divider">
-              <span>OR</span>
-            </div>
-
-            <p className="auth-footer">
-              Don't have an account yet? <Link to="/register">Register</Link>
-            </p>
-          </form>
+    <div className="auth-container">
+      {/* Use same small-auth wrapper */}
+      <div className="small-auth">
+        <div className="auth-left">
+          <img src={doctorImage} alt="Doctor" className="auth-image" />
         </div>
 
-        <footer className="auth-copyright">
-          Copyright @2025 - Fuchsius
-        </footer>
+        <div className="auth-right">
+          <div className="auth-form-wrapper">
+            <h1 className="auth-title">Sign In</h1>
+            <p className="auth-subtitle">
+              Please enter below details to access the dashboard
+            </p>
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              {error && <div className="error-message">{error}</div>}
+
+              <div className="form-group">
+                <label htmlFor="email">Email Address</label>
+                <div className="input-wrapper input-wrapper-modern">
+                  <AiOutlineMail className="input-icon" />
+                  <input
+                    type="email"
+                    id="email"
+                    placeholder="Enter Email Address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="password">Password</label>
+                <div className="input-wrapper input-wrapper-modern">
+                  <AiOutlineLock className="input-icon" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    placeholder="************"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <AiOutlineEye /> : <AiOutlineEyeInvisible />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="terms-wrapper form-options">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <span className="checkbox-custom"></span>
+                  Remember Me
+                </label>
+                <Link to="/forgot-password" className="forgot-link">
+                  Forgot password?
+                </Link>
+              </div>
+
+              <button type="submit" className="auth-button" disabled={loading}>
+                {loading ? 'Logging in...' : 'Login'}
+              </button>
+
+              <div className="auth-divider">
+                <span>OR</span>
+              </div>
+
+              <p className="auth-footer">
+                Don't have an account yet? <Link to="/register">Register</Link>
+              </p>
+            </form>
+          </div>
+
+          <footer className="auth-copyright">
+            Copyright @2025 - Fuchsius
+          </footer>
+        </div>
       </div>
     </div>
   );

@@ -86,60 +86,62 @@ const OTPVerification = () => {
 
   return (
     <div className="auth-container">
-      <div className="auth-left">
-        <img src={doctorImage} alt="Doctor" className="auth-image" />
-      </div>
-
-      <div className="auth-right">
-        <div className="auth-form-wrapper">
-          <h1 className="auth-title">Email OTP Verification</h1>
-          <p className="auth-subtitle">We sent a code to {email}</p>
-
-          <form onSubmit={handleSubmit} className="auth-form">
-            {error && <div className="error-message">{error}</div>}
-
-            <div className="otp-container">
-              {otp.map((digit, index) => (
-                <input
-                  key={index}
-                  id={`otp-${index}`}
-                  type="text"
-                  maxLength="1"
-                  value={digit}
-                  onChange={(e) => handleChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="otp-input"
-                  autoFocus={index === 0}
-                />
-              ))}
-            </div>
-
-            <div className="otp-footer">
-              <span className="otp-text">
-                Didn't receive code.{' '}
-                {timer > 0 ? (
-                  <span className="otp-timer">{formatTime(timer)}</span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleResend}
-                    className="otp-resend"
-                  >
-                    Resend Code
-                  </button>
-                )}
-              </span>
-            </div>
-
-            <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? 'Verifying...' : 'Verify & Proceed'}
-            </button>
-          </form>
+      <div className="small-auth">
+        <div className="auth-left">
+          <img src={doctorImage} alt="Doctor" className="auth-image" />
         </div>
 
-        <footer className="auth-copyright">
-          Copyright @2025 - Fuchsius
-        </footer>
+        <div className="auth-right">
+          <div className="auth-form-wrapper">
+            <h1 className="auth-title">Email OTP Verification</h1>
+            <p className="auth-subtitle">We sent a code to {email}</p>
+
+            <form onSubmit={handleSubmit} className="auth-form">
+              {error && <div className="error-message">{error}</div>}
+
+              <div className="otp-container">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index}
+                    id={`otp-${index}`}
+                    type="text"
+                    maxLength="1"
+                    value={digit}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(index, e)}
+                    className="otp-input modern-otp-input"
+                    autoFocus={index === 0}
+                  />
+                ))}
+              </div>
+
+              <div className="otp-footer">
+                <span className="otp-text">
+                  Didn't receive code.{' '}
+                  {timer > 0 ? (
+                    <span className="otp-timer">{formatTime(timer)}</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResend}
+                      className="otp-resend"
+                    >
+                      Resend Code
+                    </button>
+                  )}
+                </span>
+              </div>
+
+              <button type="submit" className="auth-button" disabled={loading}>
+                {loading ? 'Verifying...' : 'Verify & Proceed'}
+              </button>
+            </form>
+          </div>
+
+          <footer className="auth-copyright">
+            Copyright @2025 - Fuchsius
+          </footer>
+        </div>
       </div>
     </div>
   );
