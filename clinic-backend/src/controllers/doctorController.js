@@ -1,5 +1,27 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient } = require('@prisma/client');  
 const prisma = new PrismaClient();
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
+
+// Create uploads/doctors directory if it doesn't exist
+const uploadsDir = path.join(__dirname, '..', 'uploads', 'doctors');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const fileName = `doctor-${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
+    cb(null, fileName);
+  }
+});
+const upload = multer({ storage });
 
 // @desc    Get all doctors
 // @route   GET /api/doctors
@@ -78,11 +100,20 @@ const getDoctor = async (req, res, next) => {
   }
 };
 
-// @desc    Create new doctor
+// @desc    Create new doctor with optional image upload
 // @route   POST /api/doctors
 // @access  Private/Admin
 const createDoctor = async (req, res, next) => {
   try {
+    let imageUrl = null;
+
+    // Handle file upload if present
+    if (req.file) {
+      imageUrl = `/uploads/doctors/${req.file.filename}`;
+    } else if (req.body.imageUrl) {
+      imageUrl = req.body.imageUrl;
+    }
+
     const { 
       name, 
       email, 
@@ -91,7 +122,6 @@ const createDoctor = async (req, res, next) => {
       designation,
       description, 
       bio,
-      imageUrl, 
       phone, 
       dob,
       yearOfExperience,
@@ -129,7 +159,7 @@ const createDoctor = async (req, res, next) => {
         designation: designation || null,
         description: description || null,
         bio: bio || null,
-        imageUrl: imageUrl || null,
+        imageUrl, // store uploaded image path or fallback
         phone: phone || null,
         dob: dob ? new Date(dob) : null,
         yearOfExperience: yearOfExperience ? parseInt(yearOfExperience) : null,
@@ -220,6 +250,14 @@ const deleteDoctor = async (req, res, next) => {
       });
     }
 
+    // Delete image file if exists
+    if (existingDoctor.imageUrl && existingDoctor.imageUrl.startsWith('/uploads/')) {
+      const imagePath = path.join(__dirname, '..', existingDoctor.imageUrl);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
     await prisma.doctor.delete({
       where: { id }
     });
@@ -233,7 +271,7 @@ const deleteDoctor = async (req, res, next) => {
   }
 };
 
-// @desc    Upload doctor image
+// @desc    Upload doctor image (optional base64 fallback)
 // @route   POST /api/doctors/upload-image
 // @access  Private/Admin
 const uploadImage = async (req, res, next) => {
@@ -255,17 +293,39 @@ const uploadImage = async (req, res, next) => {
       });
     }
 
-    // In development, we return the base64 string directly
-    // In production, you would upload to cloud storage (Cloudinary, S3, etc.)
-    // and return the URL
+    // Extract base64 data and file extension
+    const matches = image.match(/^data:image\/([a-zA-Z]*);base64,([^"]*)$/);
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid image data'
+      });
+    }
+
+    const imageType = matches[1];
+    const base64Data = matches[2];
+    
+    // Generate unique filename
+    const fileName = `doctor-${Date.now()}-${Math.round(Math.random() * 1E9)}.${imageType}`;
+    const filePath = path.join(uploadsDir, fileName);
+
+    // Convert base64 to buffer and save
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(filePath, imageBuffer);
+
+    // Return URL path
+    const imageUrl = `/uploads/doctors/${fileName}`;
     
     res.json({
       success: true,
-      imageUrl: image  // Return the base64 string as imageUrl
+      imageUrl
     });
   } catch (error) {
     console.error('Upload error:', error);
-    next(error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload image'
+    });
   }
 };
 
@@ -275,5 +335,6 @@ module.exports = {
   createDoctor,
   updateDoctor,
   deleteDoctor,
-  uploadImage
+  uploadImage,
+  upload // <-- export multer middleware
 };

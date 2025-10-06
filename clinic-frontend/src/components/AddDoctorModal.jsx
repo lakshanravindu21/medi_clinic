@@ -23,7 +23,8 @@ const AddDoctorModal = ({ isOpen, onClose, onSuccess }) => {
     city: '',
     state: '',
     pincode: '',
-    imageUrl: ''
+    imageUrl: '',
+    imageFile: null // ✅ Added
   });
 
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,7 @@ const AddDoctorModal = ({ isOpen, onClose, onSuccess }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // ✅ Updated handleImageChange
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -52,28 +54,27 @@ const AddDoctorModal = ({ isOpen, onClose, onSuccess }) => {
       setUploadingImage(true);
       setError('');
 
-      // Convert to base64
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result;
-        setImagePreview(base64String);
-
-        // Upload to backend
-        const response = await doctorAPI.uploadImage({ image: base64String });
-        setFormData({ ...formData, imageUrl: response.imageUrl });
-      };
-      reader.readAsDataURL(file);
+      // Create preview URL for display
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
+      
+      // Store the actual file object
+      setFormData({ ...formData, imageFile: file });
     } catch (err) {
-      setError('Failed to upload image');
-      console.error('Image upload error:', err);
+      setError('Failed to process image');
+      console.error('Image processing error:', err);
     } finally {
       setUploadingImage(false);
     }
   };
 
+  // ✅ Updated removeImage
   const removeImage = () => {
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
     setImagePreview(null);
-    setFormData({ ...formData, imageUrl: '' });
+    setFormData({ ...formData, imageFile: null, imageUrl: '' });
   };
 
   const addLanguage = () => {
@@ -93,21 +94,49 @@ const AddDoctorModal = ({ isOpen, onClose, onSuccess }) => {
     });
   };
 
+  // ✅ Updated handleSubmit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const doctorData = {
-        ...formData,
-        yearOfExperience: formData.yearOfExperience ? parseInt(formData.yearOfExperience) : null,
-        languagesSpoken: JSON.stringify(formData.languagesSpoken),
-        dob: formData.dob || null
-      };
-
-      await doctorAPI.create(doctorData);
+      // Create FormData to send file along with other data
+      const submitData = new FormData();
       
+      // Add all text fields
+      submitData.append('name', formData.name);
+      submitData.append('email', formData.email);
+      submitData.append('phone', formData.phone);
+      submitData.append('specialization', formData.specialization);
+      submitData.append('department', formData.department || '');
+      submitData.append('designation', formData.designation || '');
+      submitData.append('dob', formData.dob || '');
+      submitData.append('yearOfExperience', formData.yearOfExperience || '');
+      submitData.append('medicalLicense', formData.medicalLicense || '');
+      submitData.append('languagesSpoken', JSON.stringify(formData.languagesSpoken));
+      submitData.append('bloodGroup', formData.bloodGroup || '');
+      submitData.append('gender', formData.gender || '');
+      submitData.append('bio', formData.bio || '');
+      submitData.append('address1', formData.address1 || '');
+      submitData.append('address2', formData.address2 || '');
+      submitData.append('country', formData.country || '');
+      submitData.append('city', formData.city || '');
+      submitData.append('state', formData.state || '');
+      submitData.append('pincode', formData.pincode || '');
+      
+      // Add image file if exists
+      if (formData.imageFile) {
+        submitData.append('image', formData.imageFile);
+      }
+
+      await doctorAPI.create(submitData);
+      
+      // Clean up blob URL
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+
       // Reset form
       setFormData({
         name: '',
@@ -129,7 +158,8 @@ const AddDoctorModal = ({ isOpen, onClose, onSuccess }) => {
         city: '',
         state: '',
         pincode: '',
-        imageUrl: ''
+        imageUrl: '',
+        imageFile: null
       });
       setImagePreview(null);
 
@@ -272,7 +302,7 @@ const AddDoctorModal = ({ isOpen, onClose, onSuccess }) => {
                     }}>
                       <AiOutlineCamera size={32} color="#9ca3af" />
                       <span style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '8px' }}>
-                        {uploadingImage ? 'Uploading...' : 'Upload Photo'}
+                        {uploadingImage ? 'Processing...' : 'Upload Photo'}
                       </span>
                     </label>
                   )}
@@ -714,38 +744,37 @@ const AddDoctorModal = ({ isOpen, onClose, onSuccess }) => {
             <button
               type="button"
               onClick={onClose}
-              disabled={loading}
-              style={{
-                padding: '10px 24px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px',
-                backgroundColor: 'white',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontWeight: 500
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || uploadingImage}
-              style={{
-                padding: '10px 24px',
-                border: 'none',
-                borderRadius: '6px',
-                backgroundColor: (loading || uploadingImage) ? '#9CA3AF' : '#4F46E5',
-                color: 'white',
-                cursor: (loading || uploadingImage) ? 'not-allowed' : 'pointer',
-                fontWeight: 500
-              }}
-            >
-              {loading ? 'Adding...' : 'Add Doctor'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+disabled={loading}
+style={{
+padding: '10px 24px',
+border: '1px solid #e5e7eb',
+borderRadius: '6px',
+backgroundColor: 'white',
+cursor: loading ? 'not-allowed' : 'pointer',
+fontWeight: 500
+}}
+>
+Cancel
+</button>
+<button
+type="submit"
+disabled={loading || uploadingImage}
+style={{
+padding: '10px 24px',
+border: 'none',
+borderRadius: '6px',
+backgroundColor: (loading || uploadingImage) ? '#9CA3AF' : '#4F46E5',
+color: 'white',
+cursor: (loading || uploadingImage) ? 'not-allowed' : 'pointer',
+fontWeight: 500
+}}
+>
+{loading ? 'Adding...' : 'Add Doctor'}
+</button>
+</div>
+</form>
+</div>
+</div>
+);
 };
-
 export default AddDoctorModal;

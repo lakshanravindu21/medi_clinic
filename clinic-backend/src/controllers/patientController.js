@@ -1,6 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
-
 const prisma = new PrismaClient();
+const fs = require('fs');
+const path = require('path');
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, '..', 'uploads', 'patients');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // @desc    Get all patients
 // @route   GET /api/patients
@@ -272,6 +279,14 @@ const deletePatient = async (req, res, next) => {
       });
     }
 
+    // Delete image file if exists
+    if (existingPatient.imageUrl && existingPatient.imageUrl.startsWith('/uploads/')) {
+      const imagePath = path.join(__dirname, '..', existingPatient.imageUrl);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
     // Delete patient (will also delete user due to cascade)
     await prisma.patient.delete({
       where: { id }
@@ -286,6 +301,9 @@ const deletePatient = async (req, res, next) => {
   }
 };
 
+// @desc    Upload patient image
+// @route   POST /api/patients/upload-image
+// @access  Private/Admin
 const uploadImage = async (req, res, next) => {
   try {
     const { image } = req.body;
@@ -305,15 +323,39 @@ const uploadImage = async (req, res, next) => {
       });
     }
 
-    // In development, we return the base64 string directly
-    // In production, you would upload to cloud storage (Cloudinary, S3, etc.)
+    // Extract base64 data and file extension
+    const matches = image.match(/^data:image\/([a-zA-Z]*);base64,([^"]*)$/);
+    if (!matches || matches.length !== 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid image data'
+      });
+    }
+
+    const imageType = matches[1];
+    const base64Data = matches[2];
+    
+    // Generate unique filename
+    const fileName = `patient-${Date.now()}-${Math.round(Math.random() * 1E9)}.${imageType}`;
+    const filePath = path.join(uploadsDir, fileName);
+
+    // Convert base64 to buffer and save
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(filePath, imageBuffer);
+
+    // Return URL path
+    const imageUrl = `/uploads/patients/${fileName}`;
+    
     res.json({
       success: true,
-      imageUrl: image  // Return the base64 string as imageUrl
+      imageUrl: imageUrl
     });
   } catch (error) {
     console.error('Upload error:', error);
-    next(error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload image'
+    });
   }
 };
 

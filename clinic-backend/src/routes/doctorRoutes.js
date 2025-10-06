@@ -6,7 +6,8 @@ const {
   createDoctor,
   updateDoctor,
   deleteDoctor,
-  uploadImage
+  uploadImage,
+  upload // Import multer middleware
 } = require('../controllers/doctorController');
 const { protect, adminOnly } = require('../middleware/auth');
 const { validateDoctor } = require('../middleware/validation');
@@ -17,7 +18,9 @@ router.get('/:id', getDoctor);
 
 // Protected routes (Admin only)
 router.post('/upload-image', protect, adminOnly, uploadImage);
-router.post('/', protect, adminOnly, validateDoctor, createDoctor);
+
+// ✅ Add multer middleware to createDoctor route
+router.post('/', protect, adminOnly, upload.single('image'), createDoctor);
 router.put('/:id', protect, adminOnly, validateDoctor, updateDoctor);
 router.delete('/:id', protect, adminOnly, deleteDoctor);
 

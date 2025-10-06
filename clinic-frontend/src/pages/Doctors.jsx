@@ -52,23 +52,26 @@ const Doctors = () => {
     }
   };
 
+  // ✅ Updated getDoctorImage function
   const getDoctorImage = (doctor) => {
-    // Check if imageUrl exists and is a base64 string or URL
     if (doctor.imageUrl) {
-      console.log('Doctor has imageUrl:', doctor.name, doctor.imageUrl.substring(0, 50)); // Debug
+      console.log('Doctor has imageUrl:', doctor.name, doctor.imageUrl); // Debug
+      // Check if it's a relative path
+      if (doctor.imageUrl.startsWith('/uploads/')) {
+        // Use backend URL
+        return `http://localhost:5000${doctor.imageUrl}`;
+      }
       return doctor.imageUrl;
     }
-    // Fallback to avatar placeholder
+    // Fallback avatar
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=random&size=200`;
   };
 
   return (
     <div className="dashboard-layout">
       <Sidebar />
-      
       <div className="dashboard-main">
         <Header />
-        
         <div className="doctors-content">
           <div className="doctors-header">
             <div>

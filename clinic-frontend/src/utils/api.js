@@ -53,9 +53,30 @@ export const authAPI = {
 export const doctorAPI = {
   getAll: (params) => api.get('/doctors', { params }),
   getOne: (id) => api.get(`/doctors/${id}`),
-  create: (data) => api.post('/doctors', data),
+  
+  // ✅ Updated create method to handle FormData
+  create: (data) => {
+    // If data is FormData, create a new axios instance without Content-Type
+    // This allows the browser to set the proper multipart/form-data boundary
+    if (data instanceof FormData) {
+      return axios({
+        method: 'post',
+        url: `${API_URL}/doctors`,
+        data: data,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }).then(response => response.data);
+    }
+    // Otherwise use normal api instance
+    return api.post('/doctors', data);
+  },
+  
   update: (id, data) => api.put(`/doctors/${id}`, data),
-  delete: (id) => api.delete(`/doctors/${id}`)
+  delete: (id) => api.delete(`/doctors/${id}`),
+  
+  // ✅ Keep uploadImage for base64 fallback (optional)
+  uploadImage: (data) => api.post('/doctors/upload-image', data)
 };
 
 // Patient API
