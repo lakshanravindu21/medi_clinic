@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AiOutlineClose } from 'react-icons/ai';
 import { appointmentAPI, doctorAPI } from '../utils/api';
 
-const AddAppointmentModal = ({ isOpen, onClose, onSuccess }) => {
+const AddAppointmentModal = ({ isOpen, onClose, onSuccess, appointment }) => {
   const [formData, setFormData] = useState({
     doctorId: '',
     appointmentDateTime: '',
@@ -17,8 +17,24 @@ const AddAppointmentModal = ({ isOpen, onClose, onSuccess }) => {
   useEffect(() => {
     if (isOpen) {
       fetchDoctors();
+      // If editing, populate form with existing data
+      if (appointment) {
+        setFormData({
+          doctorId: appointment.doctor?.id || '',
+          appointmentDateTime: appointment.appointmentDateTime || '',
+          reason: appointment.reason || '',
+          symptoms: appointment.symptoms || ''
+        });
+      } else {
+        setFormData({
+          doctorId: '',
+          appointmentDateTime: '',
+          reason: '',
+          symptoms: ''
+        });
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, appointment]);
 
   const fetchDoctors = async () => {
     try {
@@ -39,15 +55,21 @@ const AddAppointmentModal = ({ isOpen, onClose, onSuccess }) => {
       // Validate datetime is in the future
       const selectedDate = new Date(formData.appointmentDateTime);
       const now = new Date();
-      
+
       if (selectedDate <= now) {
         setError('Please select a future date and time');
         setLoading(false);
         return;
       }
 
-      await appointmentAPI.create(formData);
-      
+      if (appointment?.id) {
+        // Edit mode
+        await appointmentAPI.update(appointment.id, formData);
+      } else {
+        // Add mode
+        await appointmentAPI.create(formData);
+      }
+
       // Reset form
       setFormData({
         doctorId: '',
@@ -59,7 +81,7 @@ const AddAppointmentModal = ({ isOpen, onClose, onSuccess }) => {
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      setError(err.message || 'Failed to create appointment');
+      setError(err.message || 'Failed to save appointment');
     } finally {
       setLoading(false);
     }
@@ -115,7 +137,9 @@ const AddAppointmentModal = ({ isOpen, onClose, onSuccess }) => {
           backgroundColor: 'white',
           zIndex: 10
         }}>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600 }}>Book New Appointment</h2>
+          <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600 }}>
+            {appointment ? 'Edit Appointment' : 'Book New Appointment'}
+          </h2>
           <button onClick={onClose} style={{
             background: 'none',
             border: 'none',
@@ -306,7 +330,7 @@ const AddAppointmentModal = ({ isOpen, onClose, onSuccess }) => {
                 fontSize: '0.875rem'
               }}
             >
-              {loading ? 'Booking...' : 'Book Appointment'}
+              {loading ? (appointment ? 'Updating...' : 'Booking...') : (appointment ? 'Update Appointment' : 'Book Appointment')}
             </button>
           </div>
         </form>

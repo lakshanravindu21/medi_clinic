@@ -12,19 +12,33 @@ const Appointments = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showMenu, setShowMenu] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     fetchAppointments();
   }, []);
 
+  // Auto-hide messages after 3 seconds
+  useEffect(() => {
+    if (successMessage || errorMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+        setErrorMessage('');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage, errorMessage]);
+
   const fetchAppointments = async () => {
     try {
       setLoading(true);
       const response = await appointmentAPI.getAll();
-      console.log('Fetched appointments:', response.data);
       setAppointments(response.data || []);
     } catch (error) {
       console.error('Error fetching appointments:', error);
+      setErrorMessage('Failed to load appointments');
     } finally {
       setLoading(false);
     }
@@ -33,47 +47,74 @@ const Appointments = () => {
   const handleCancel = async (appointmentId) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
       try {
-        await appointmentAPI.cancel(appointmentId);
-        fetchAppointments();
+        const response = await appointmentAPI.cancel(appointmentId);
+        setSuccessMessage(response.message || 'Appointment cancelled successfully!');
+        await fetchAppointments();
         setShowMenu(null);
       } catch (error) {
         console.error('Error canceling appointment:', error);
-        alert('Failed to cancel appointment');
+        setErrorMessage(error.message || 'Failed to cancel appointment');
       }
     }
+  };
+
+  const handleEdit = (appointment) => {
+    setEditingAppointment({
+      ...appointment,
+      appointmentDateTime: new Date(appointment.appointmentDateTime).toISOString().slice(0, 16)
+    });
+    setIsModalOpen(true);
+    setShowMenu(null);
+  };
+
+  const handleModalSuccess = async () => {
+    await fetchAppointments();
+    setEditingAppointment(null);
+    setIsModalOpen(false);
+    setSuccessMessage(
+      editingAppointment 
+        ? 'Appointment updated successfully!' 
+        : 'Appointment booked successfully!'
+    );
   };
 
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'N/A';
     const date = new Date(dateTimeString);
-    return date.toLocaleDateString('en-US', { 
-      day: '2-digit',
-      month: 'short', 
-      year: 'numeric'
-    }) + ' - ' + date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
+    return (
+      date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) +
+      ' - ' +
+      date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+    );
   };
 
   const getStatusClass = (status) => {
-    switch(status?.toUpperCase()) {
-      case 'BOOKED': return 'status-confirmed';
-      case 'CANCELED': return 'status-cancelled';
-      case 'COMPLETED': return 'status-checked-out';
-      case 'RESCHEDULED': return 'status-schedule';
-      default: return '';
+    switch (status?.toUpperCase()) {
+      case 'BOOKED':
+        return 'status-confirmed';
+      case 'CANCELED':
+        return 'status-cancelled';
+      case 'COMPLETED':
+        return 'status-checked-out';
+      case 'RESCHEDULED':
+        return 'status-schedule';
+      default:
+        return '';
     }
   };
 
   const getStatusDisplay = (status) => {
-    switch(status?.toUpperCase()) {
-      case 'BOOKED': return 'Confirmed';
-      case 'CANCELED': return 'Cancelled';
-      case 'COMPLETED': return 'Completed';
-      case 'RESCHEDULED': return 'Rescheduled';
-      default: return status;
+    switch (status?.toUpperCase()) {
+      case 'BOOKED':
+        return 'Confirmed';
+      case 'CANCELED':
+        return 'Cancelled';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'RESCHEDULED':
+        return 'Rescheduled';
+      default:
+        return status;
     }
   };
 
@@ -85,28 +126,70 @@ const Appointments = () => {
       }
       return doctor.imageUrl;
     }
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor?.name || 'Doctor')}&background=4F46E5&color=fff`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      doctor?.name || 'Doctor'
+    )}&background=4F46E5&color=fff`;
   };
 
   const getPatientImage = (patient) => {
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(patient?.name || 'Patient')}&background=random`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+      patient?.name || 'Patient'
+    )}&background=random`;
   };
 
   return (
     <div className="dashboard-layout">
       <Sidebar />
-      
+
       <div className="dashboard-main">
         <Header />
-        
+
         <div className="appointments-content">
+          {/* Success/Error Messages */}
+          {successMessage && (
+            <div style={{
+              padding: '12px 20px',
+              backgroundColor: '#d1fae5',
+              border: '1px solid #6ee7b7',
+              borderRadius: '8px',
+              color: '#065f46',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <span style={{ fontSize: '20px' }}>✓</span>
+              {successMessage}
+            </div>
+          )}
+
+          {errorMessage && (
+            <div style={{
+              padding: '12px 20px',
+              backgroundColor: '#fee2e2',
+              border: '1px solid #fecaca',
+              borderRadius: '8px',
+              color: '#dc2626',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <span style={{ fontSize: '20px' }}>✕</span>
+              {errorMessage}
+            </div>
+          )}
+
           <div className="appointments-header">
-            <h1>Appointment</h1>
+            <h1>Appointments</h1>
             <div className="header-actions">
               <button className="export-btn">Export</button>
-              <button 
+              <button
                 className="add-appointment-btn"
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => {
+                  setEditingAppointment(null);
+                  setIsModalOpen(true);
+                }}
               >
                 + New Appointment
               </button>
@@ -117,9 +200,6 @@ const Appointments = () => {
             <div className="search-box">
               <AiOutlineSearch className="search-icon" />
               <input type="text" placeholder="Search" />
-            </div>
-            <div className="date-range">
-              <span>📅 27 May 2025 - 02 Jun 2025</span>
             </div>
             <button className="filter-btn">
               <AiOutlineFilter /> Filter
@@ -162,10 +242,7 @@ const Appointments = () => {
                           <td className="date-time">{formatDateTime(apt.appointmentDateTime)}</td>
                           <td>
                             <div className="patient-cell">
-                              <img 
-                                src={getPatientImage(apt.patient)}
-                                alt={apt.patient?.name || 'Patient'}
-                              />
+                              <img src={getPatientImage(apt.patient)} alt={apt.patient?.name || 'Patient'} />
                               <div>
                                 <p className="patient-name">{apt.patient?.name || 'N/A'}</p>
                                 <p className="patient-phone">{apt.patient?.phone || 'N/A'}</p>
@@ -174,13 +251,7 @@ const Appointments = () => {
                           </td>
                           <td>
                             <div className="doctor-cell">
-                              <img 
-                                src={getDoctorImage(apt.doctor)}
-                                alt={apt.doctor?.name || 'Doctor'}
-                                onError={(e) => {
-                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(apt.doctor?.name || 'Doctor')}&background=4F46E5&color=fff`;
-                                }}
-                              />
+                              <img src={getDoctorImage(apt.doctor)} alt={apt.doctor?.name || 'Doctor'} />
                               <div>
                                 <p className="doctor-name">{apt.doctor?.name || 'N/A'}</p>
                                 <p className="doctor-specialty">{apt.doctor?.specialization || 'N/A'}</p>
@@ -194,7 +265,7 @@ const Appointments = () => {
                             </span>
                           </td>
                           <td>
-                            <button 
+                            <button
                               className="menu-btn"
                               onClick={() => setShowMenu(showMenu === apt.id ? null : apt.id)}
                             >
@@ -202,9 +273,17 @@ const Appointments = () => {
                             </button>
                             {showMenu === apt.id && (
                               <div className="dropdown-menu">
-                                <button onClick={() => alert('View functionality coming soon')}>View</button>
-                                <button onClick={() => alert('Edit functionality coming soon')}>Edit</button>
-                                <button onClick={() => handleCancel(apt.id)}>Cancel</button>
+                                {apt.status !== 'CANCELED' && (
+                                  <>
+                                    <button onClick={() => handleEdit(apt)}>Edit</button>
+                                    <button onClick={() => handleCancel(apt.id)}>Cancel</button>
+                                  </>
+                                )}
+                                {apt.status === 'CANCELED' && (
+                                  <button disabled style={{ color: '#999', cursor: 'not-allowed' }}>
+                                    Cancelled
+                                  </button>
+                                )}
                               </div>
                             )}
                           </td>
@@ -226,24 +305,30 @@ const Appointments = () => {
                   <span>Results</span>
                 </div>
                 <div className="pagination-controls">
-                  <button className="page-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}>←</button>
+                  <button className="page-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}>
+                    ←
+                  </button>
                   <button className="page-btn active">{currentPage}</button>
-                  <button className="page-btn" onClick={() => setCurrentPage(currentPage + 1)}>→</button>
+                  <button className="page-btn" onClick={() => setCurrentPage(currentPage + 1)}>
+                    →
+                  </button>
                 </div>
               </div>
             </>
           )}
 
-          <footer className="dashboard-footer">
-            2025 © Fuchsius, All Rights Reserved
-          </footer>
+          <footer className="dashboard-footer">2025 © Fuchsius, All Rights Reserved</footer>
         </div>
       </div>
 
-      <AddAppointmentModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchAppointments}
+      <AddAppointmentModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingAppointment(null);
+        }}
+        onSuccess={handleModalSuccess}
+        appointment={editingAppointment}
       />
     </div>
   );

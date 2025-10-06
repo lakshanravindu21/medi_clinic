@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-
+const { PrismaClient } = require('@prisma/client'); 
 const prisma = new PrismaClient();
 
 // @desc    Get all appointments
@@ -8,60 +7,36 @@ const prisma = new PrismaClient();
 const getAppointments = async (req, res, next) => {
   try {
     const { status, doctorId, date } = req.query;
-
-    // Build filter object
     const where = {};
 
-    // If user is a patient, only show their appointments
+    // Role-based filtering
     if (req.user.role === 'PATIENT') {
       where.patientId = req.user.id;
+    } else if (req.user.role === 'DOCTOR') {
+      where.doctorId = req.user.id;
     }
 
-    // Filter by status
-    if (status) {
-      where.status = status;
-    }
+    if (status) where.status = status;
+    if (doctorId) where.doctorId = doctorId;
 
-    // Filter by doctor
-    if (doctorId) {
-      where.doctorId = doctorId;
-    }
-
-    // Filter by date
     if (date) {
       const startDate = new Date(date);
       const endDate = new Date(date);
       endDate.setDate(endDate.getDate() + 1);
-
-      where.appointmentDateTime = {
-        gte: startDate,
-        lt: endDate
-      };
+      where.appointmentDateTime = { gte: startDate, lt: endDate };
     }
 
     const appointments = await prisma.appointment.findMany({
       where,
       include: {
         patient: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true
-          }
+          select: { id: true, name: true, email: true, phone: true }
         },
         doctor: {
-          select: {
-            id: true,
-            name: true,
-            specialization: true,
-            imageUrl: true
-          }
+          select: { id: true, name: true, specialization: true, imageUrl: true }
         }
       },
-      orderBy: {
-        appointmentDateTime: 'desc'
-      }
+      orderBy: { appointmentDateTime: 'desc' }
     });
 
     res.json({
@@ -85,21 +60,10 @@ const getAppointment = async (req, res, next) => {
       where: { id },
       include: {
         patient: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true
-          }
+          select: { id: true, name: true, email: true, phone: true }
         },
         doctor: {
-          select: {
-            id: true,
-            name: true,
-            specialization: true,
-            imageUrl: true,
-            phone: true
-          }
+          select: { id: true, name: true, specialization: true, imageUrl: true, phone: true }
         }
       }
     });
@@ -111,18 +75,7 @@ const getAppointment = async (req, res, next) => {
       });
     }
 
-    // Check if user has access to this appointment
-    if (req.user.role === 'PATIENT' && appointment.patientId !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to access this appointment'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: appointment
-    });
+    res.json({ success: true, data: appointment });
   } catch (error) {
     next(error);
   }
@@ -130,7 +83,7 @@ const getAppointment = async (req, res, next) => {
 
 // @desc    Create new appointment
 // @route   POST /api/appointments
-// @access  Private (Patient)
+// @access  Private (Patient only)
 const createAppointment = async (req, res, next) => {
   try {
     const { doctorId, appointmentDateTime, reason, symptoms } = req.body;
@@ -147,21 +100,28 @@ const createAppointment = async (req, res, next) => {
       });
     }
 
-    // Check if time slot is available
+    // Validate appointment is in the future
+    const appointmentDate = new Date(appointmentDateTime);
+    if (appointmentDate <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Appointment date must be in the future'
+      });
+    }
+
+    // Check if time slot is already booked
     const existingAppointment = await prisma.appointment.findFirst({
       where: {
         doctorId,
-        appointmentDateTime: new Date(appointmentDateTime),
-        status: {
-          in: ['BOOKED', 'RESCHEDULED']
-        }
+        appointmentDateTime: appointmentDate,
+        status: { in: ['BOOKED', 'RESCHEDULED'] }
       }
     });
 
     if (existingAppointment) {
       return res.status(400).json({
         success: false,
-        message: 'This time slot is already booked'
+        message: 'This time slot is already booked. Please choose another time.'
       });
     }
 
@@ -170,24 +130,24 @@ const createAppointment = async (req, res, next) => {
       data: {
         patientId: req.user.id,
         doctorId,
-        appointmentDateTime: new Date(appointmentDateTime),
+        appointmentDateTime: appointmentDate,
         reason: reason || null,
         symptoms: symptoms || null,
         status: 'BOOKED'
       },
       include: {
         doctor: {
-          select: {
-            name: true,
-            specialization: true
-          }
+          select: { name: true, specialization: true }
+        },
+        patient: {
+          select: { name: true, email: true }
         }
       }
     });
 
     res.status(201).json({
       success: true,
-      message: 'Appointment booked successfully',
+      message: 'Appointment booked successfully!',
       data: appointment
     });
   } catch (error) {
@@ -203,7 +163,6 @@ const updateAppointment = async (req, res, next) => {
     const { id } = req.params;
     const { appointmentDateTime, reason, symptoms, status, notes } = req.body;
 
-    // Get existing appointment
     const existingAppointment = await prisma.appointment.findUnique({
       where: { id }
     });
@@ -215,70 +174,72 @@ const updateAppointment = async (req, res, next) => {
       });
     }
 
-    // Check authorization
-    if (req.user.role === 'PATIENT' && existingAppointment.patientId !== req.user.id) {
-      return res.status(403).json({
+    // Check if appointment is already cancelled
+    if (existingAppointment.status === 'CANCELED') {
+      return res.status(400).json({
         success: false,
-        message: 'Not authorized to update this appointment'
+        message: 'Cannot update a cancelled appointment'
       });
     }
 
-    // Prepare update data
     const updateData = {};
 
+    // Handle rescheduling
     if (appointmentDateTime) {
-      // Check if new time slot is available
-      const conflictingAppointment = await prisma.appointment.findFirst({
-        where: {
-          doctorId: existingAppointment.doctorId,
-          appointmentDateTime: new Date(appointmentDateTime),
-          status: {
-            in: ['BOOKED', 'RESCHEDULED']
-          },
-          NOT: {
-            id: id
-          }
-        }
-      });
-
-      if (conflictingAppointment) {
+      const newDateTime = new Date(appointmentDateTime);
+      
+      // Validate future date
+      if (newDateTime <= new Date()) {
         return res.status(400).json({
           success: false,
-          message: 'This time slot is already booked'
+          message: 'Appointment date must be in the future'
         });
       }
 
-      updateData.appointmentDateTime = new Date(appointmentDateTime);
+      // Check for conflicts
+      const conflicting = await prisma.appointment.findFirst({
+        where: {
+          doctorId: existingAppointment.doctorId,
+          appointmentDateTime: newDateTime,
+          status: { in: ['BOOKED', 'RESCHEDULED'] },
+          NOT: { id }
+        }
+      });
+
+      if (conflicting) {
+        return res.status(400).json({
+          success: false,
+          message: 'This time slot is already booked. Please choose another time.'
+        });
+      }
+
+      updateData.appointmentDateTime = newDateTime;
       updateData.status = 'RESCHEDULED';
     }
 
     if (reason !== undefined) updateData.reason = reason;
     if (symptoms !== undefined) updateData.symptoms = symptoms;
-    if (notes !== undefined && req.user.role === 'ADMIN') updateData.notes = notes;
-    if (status !== undefined && req.user.role === 'ADMIN') updateData.status = status;
+    
+    // Only admin can update notes and status directly
+    if (req.user.role === 'ADMIN') {
+      if (notes !== undefined) updateData.notes = notes;
+      if (status !== undefined) updateData.status = status;
+    }
 
     const appointment = await prisma.appointment.update({
       where: { id },
       data: updateData,
       include: {
-        patient: {
-          select: {
-            name: true,
-            email: true
-          }
-        },
-        doctor: {
-          select: {
-            name: true,
-            specialization: true
-          }
-        }
+        patient: { select: { name: true, email: true } },
+        doctor: { select: { name: true, specialization: true } }
       }
     });
 
     res.json({
       success: true,
-      message: 'Appointment updated successfully',
+      message: appointmentDateTime 
+        ? 'Appointment rescheduled successfully!' 
+        : 'Appointment updated successfully!',
       data: appointment
     });
   } catch (error) {
@@ -293,7 +254,6 @@ const cancelAppointment = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Get existing appointment
     const existingAppointment = await prisma.appointment.findUnique({
       where: { id }
     });
@@ -305,11 +265,11 @@ const cancelAppointment = async (req, res, next) => {
       });
     }
 
-    // Check authorization
-    if (req.user.role === 'PATIENT' && existingAppointment.patientId !== req.user.id) {
-      return res.status(403).json({
+    // Check if already cancelled
+    if (existingAppointment.status === 'CANCELED') {
+      return res.status(400).json({
         success: false,
-        message: 'Not authorized to cancel this appointment'
+        message: 'This appointment is already cancelled'
       });
     }
 
@@ -321,7 +281,7 @@ const cancelAppointment = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Appointment canceled successfully',
+      message: 'Appointment cancelled successfully',
       data: appointment
     });
   } catch (error) {

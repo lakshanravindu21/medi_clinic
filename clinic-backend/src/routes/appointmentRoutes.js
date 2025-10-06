@@ -9,14 +9,24 @@ const {
 } = require('../controllers/appointmentController');
 const { protect } = require('../middleware/auth');
 const { validateAppointment } = require('../middleware/validation');
+const { roleCheck } = require('../middleware/roleCheck');
 
 // All appointment routes require authentication
 router.use(protect);
 
+// Get all appointments (filtered by role)
 router.get('/', getAppointments);
-router.get('/:id', getAppointment);
-router.post('/', validateAppointment, createAppointment);
-router.put('/:id', updateAppointment);
-router.delete('/:id', cancelAppointment);
+
+// Get single appointment
+router.get('/:id', roleCheck(['ADMIN', 'DOCTOR', 'PATIENT']), getAppointment);
+
+// Create appointment (patients only)
+router.post('/', roleCheck(['PATIENT']), validateAppointment, createAppointment);
+
+// Update/reschedule appointment
+router.put('/:id', roleCheck(['PATIENT', 'DOCTOR', 'ADMIN']), updateAppointment);
+
+// Cancel appointment
+router.delete('/:id', roleCheck(['PATIENT', 'ADMIN']), cancelAppointment);
 
 module.exports = router;
