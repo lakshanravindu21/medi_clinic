@@ -1,105 +1,95 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../components/layout/Header';
 import Sidebar from '../components/layout/Sidebar';
+import AddAppointmentModal from '../components/AddAppointmentModal';
 import { AiOutlineSearch, AiOutlineFilter, AiOutlineMore } from 'react-icons/ai';
+import { appointmentAPI } from '../utils/api';
 import '../styles/appointments.css';
 
 const Appointments = () => {
-  const [appointments] = useState([
-    {
-      id: 1,
-      dateTime: '30 Apr 2025 - 09:30 AM',
-      patient: { name: 'Alberto Ripley', phone: '+1 56556 54565' },
-      doctor: { name: 'Dr. Mick Thompson', specialty: 'Cardiologist' },
-      mode: 'In-person',
-      status: 'Checked Out'
-    },
-    {
-      id: 2,
-      dateTime: '15 Apr 2025 - 11:20 AM',
-      patient: { name: 'Susan Babin', phone: '+1 65658 95654' },
-      doctor: { name: 'Dr. Sarah Johnson', specialty: 'Orthopedic Surgeon' },
-      mode: 'Online',
-      status: 'Checked in'
-    },
-    {
-      id: 3,
-      dateTime: '02 Apr 2025 - 08:15 AM',
-      patient: { name: 'Carol Lam', phone: '+1 55654 56647' },
-      doctor: { name: 'Dr. Emily Carter', specialty: 'Pediatrician' },
-      mode: 'In-Person',
-      status: 'Cancelled'
-    },
-    {
-      id: 4,
-      dateTime: '27 Mar 2025 - 02:00 PM',
-      patient: { name: 'Marsha Noland', phone: '+1 65668 54558' },
-      doctor: { name: 'Dr. David Lee', specialty: 'Gynecologist' },
-      mode: 'Online',
-      status: 'Schedule'
-    },
-    {
-      id: 5,
-      dateTime: '12 Mar 2025 - 05:40 PM',
-      patient: { name: 'Irma Armstrong', phone: '+1 45214 66568' },
-      doctor: { name: 'Dr. Anna Kim', specialty: 'Psychiatrist' },
-      mode: 'Online',
-      status: 'Confirmed'
-    },
-    {
-      id: 6,
-      dateTime: '05 Mar 2025 - 11:15 AM',
-      patient: { name: 'Jesus Adams', phone: '+1 41254 45214' },
-      doctor: { name: 'Dr. John Smith', specialty: 'Neurosurgeon' },
-      mode: 'Online',
-      status: 'Confirmed'
-    },
-    {
-      id: 7,
-      dateTime: '24 Feb 2025 - 09:20 AM',
-      patient: { name: 'Ezra Belcher', phone: '+1 65895 41247' },
-      doctor: { name: 'Dr. Lisa White', specialty: 'Oncologist' },
-      mode: 'In-Person',
-      status: 'Cancelled'
-    },
-    {
-      id: 8,
-      dateTime: '16 Feb 2025 - 11:40 AM',
-      patient: { name: 'Glen Lentz', phone: '+1 62458 45845' },
-      doctor: { name: 'Dr. Patricia Brown', specialty: 'Pulmonologist' },
-      mode: 'Online',
-      status: 'Confirmed'
-    },
-    {
-      id: 9,
-      dateTime: '01 Feb 2025 - 04:00 PM',
-      patient: { name: 'Bernard Griffith', phone: '+1 61422 45214' },
-      doctor: { name: 'Dr. Rachel Green', specialty: 'Urologist' },
-      mode: 'Online',
-      status: 'Checked Out'
-    },
-    {
-      id: 10,
-      dateTime: '25 Jan 2025 - 03:10 PM',
-      patient: { name: 'John Elsass', phone: '+1 47851 26371' },
-      doctor: { name: 'Dr. Michael Smith', specialty: 'Cardiologist' },
-      mode: 'Online',
-      status: 'Schedule'
-    },
-  ]);
-
-  const [currentPage, setCurrentPage] = useState(2);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [showMenu, setShowMenu] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      const response = await appointmentAPI.getAll();
+      console.log('Fetched appointments:', response.data);
+      setAppointments(response.data || []);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = async (appointmentId) => {
+    if (window.confirm('Are you sure you want to cancel this appointment?')) {
+      try {
+        await appointmentAPI.cancel(appointmentId);
+        fetchAppointments();
+        setShowMenu(null);
+      } catch (error) {
+        console.error('Error canceling appointment:', error);
+        alert('Failed to cancel appointment');
+      }
+    }
+  };
+
+  const formatDateTime = (dateTimeString) => {
+    if (!dateTimeString) return 'N/A';
+    const date = new Date(dateTimeString);
+    return date.toLocaleDateString('en-US', { 
+      day: '2-digit',
+      month: 'short', 
+      year: 'numeric'
+    }) + ' - ' + date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   const getStatusClass = (status) => {
-    switch(status.toLowerCase()) {
-      case 'confirmed': return 'status-confirmed';
-      case 'cancelled': return 'status-cancelled';
-      case 'checked out': return 'status-checked-out';
-      case 'checked in': return 'status-checked-in';
-      case 'schedule': return 'status-schedule';
+    switch(status?.toUpperCase()) {
+      case 'BOOKED': return 'status-confirmed';
+      case 'CANCELED': return 'status-cancelled';
+      case 'COMPLETED': return 'status-checked-out';
+      case 'RESCHEDULED': return 'status-schedule';
       default: return '';
     }
+  };
+
+  const getStatusDisplay = (status) => {
+    switch(status?.toUpperCase()) {
+      case 'BOOKED': return 'Confirmed';
+      case 'CANCELED': return 'Cancelled';
+      case 'COMPLETED': return 'Completed';
+      case 'RESCHEDULED': return 'Rescheduled';
+      default: return status;
+    }
+  };
+
+  const getDoctorImage = (doctor) => {
+    if (doctor?.imageUrl) {
+      if (doctor.imageUrl.startsWith('/uploads/')) {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        return `${API_URL}${doctor.imageUrl}`;
+      }
+      return doctor.imageUrl;
+    }
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor?.name || 'Doctor')}&background=4F46E5&color=fff`;
+  };
+
+  const getPatientImage = (patient) => {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(patient?.name || 'Patient')}&background=random`;
   };
 
   return (
@@ -114,7 +104,12 @@ const Appointments = () => {
             <h1>Appointment</h1>
             <div className="header-actions">
               <button className="export-btn">Export</button>
-              <button className="add-appointment-btn">+ New Appointment</button>
+              <button 
+                className="add-appointment-btn"
+                onClick={() => setIsModalOpen(true)}
+              >
+                + New Appointment
+              </button>
             </div>
           </div>
 
@@ -138,99 +133,118 @@ const Appointments = () => {
             </div>
           </div>
 
-          <div className="appointments-table-container">
-            <table className="appointments-table">
-              <thead>
-                <tr>
-                  <th>Date & Time</th>
-                  <th>Patient</th>
-                  <th>Doctor</th>
-                  <th>Mode</th>
-                  <th>Status</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {appointments.map((apt) => (
-                  <tr key={apt.id}>
-                    <td className="date-time">{apt.dateTime}</td>
-                    <td>
-                      <div className="patient-cell">
-                        <img 
-                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(apt.patient.name)}&background=random`}
-                          alt={apt.patient.name}
-                        />
-                        <div>
-                          <p className="patient-name">{apt.patient.name}</p>
-                          <p className="patient-phone">{apt.patient.phone}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="doctor-cell">
-                        <img 
-                          src={`https://ui-avatars.com/api/?name=${encodeURIComponent(apt.doctor.name)}&background=4F46E5&color=fff`}
-                          alt={apt.doctor.name}
-                        />
-                        <div>
-                          <p className="doctor-name">{apt.doctor.name}</p>
-                          <p className="doctor-specialty">{apt.doctor.specialty}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="mode">{apt.mode}</td>
-                    <td>
-                      <span className={`status-badge ${getStatusClass(apt.status)}`}>
-                        {apt.status}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        className="menu-btn"
-                        onClick={() => setShowMenu(showMenu === apt.id ? null : apt.id)}
-                      >
-                        <AiOutlineMore size={18} />
-                      </button>
-                      {showMenu === apt.id && (
-                        <div className="dropdown-menu">
-                          <button>View</button>
-                          <button>Edit</button>
-                          <button>Cancel</button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>Loading appointments...</div>
+          ) : (
+            <>
+              <div className="appointments-table-container">
+                <table className="appointments-table">
+                  <thead>
+                    <tr>
+                      <th>Date & Time</th>
+                      <th>Patient</th>
+                      <th>Doctor</th>
+                      <th>Reason</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {appointments.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                          No appointments found. Book your first appointment!
+                        </td>
+                      </tr>
+                    ) : (
+                      appointments.map((apt) => (
+                        <tr key={apt.id}>
+                          <td className="date-time">{formatDateTime(apt.appointmentDateTime)}</td>
+                          <td>
+                            <div className="patient-cell">
+                              <img 
+                                src={getPatientImage(apt.patient)}
+                                alt={apt.patient?.name || 'Patient'}
+                              />
+                              <div>
+                                <p className="patient-name">{apt.patient?.name || 'N/A'}</p>
+                                <p className="patient-phone">{apt.patient?.phone || 'N/A'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="doctor-cell">
+                              <img 
+                                src={getDoctorImage(apt.doctor)}
+                                alt={apt.doctor?.name || 'Doctor'}
+                                onError={(e) => {
+                                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(apt.doctor?.name || 'Doctor')}&background=4F46E5&color=fff`;
+                                }}
+                              />
+                              <div>
+                                <p className="doctor-name">{apt.doctor?.name || 'N/A'}</p>
+                                <p className="doctor-specialty">{apt.doctor?.specialization || 'N/A'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="mode">{apt.reason || 'General Checkup'}</td>
+                          <td>
+                            <span className={`status-badge ${getStatusClass(apt.status)}`}>
+                              {getStatusDisplay(apt.status)}
+                            </span>
+                          </td>
+                          <td>
+                            <button 
+                              className="menu-btn"
+                              onClick={() => setShowMenu(showMenu === apt.id ? null : apt.id)}
+                            >
+                              <AiOutlineMore size={18} />
+                            </button>
+                            {showMenu === apt.id && (
+                              <div className="dropdown-menu">
+                                <button onClick={() => alert('View functionality coming soon')}>View</button>
+                                <button onClick={() => alert('Edit functionality coming soon')}>Edit</button>
+                                <button onClick={() => handleCancel(apt.id)}>Cancel</button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-          <div className="pagination">
-            <div className="pagination-info">
-              <span>Show</span>
-              <select>
-                <option>10</option>
-                <option>25</option>
-                <option>50</option>
-              </select>
-              <span>Results</span>
-            </div>
-            <div className="pagination-controls">
-              <button className="page-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}>←</button>
-              <button className="page-btn">1</button>
-              <button className="page-btn active">2</button>
-              <button className="page-btn">3</button>
-              <span>...</span>
-              <button className="page-btn">12</button>
-              <button className="page-btn" onClick={() => setCurrentPage(currentPage + 1)}>→</button>
-            </div>
-          </div>
+              <div className="pagination">
+                <div className="pagination-info">
+                  <span>Show</span>
+                  <select>
+                    <option>10</option>
+                    <option>25</option>
+                    <option>50</option>
+                  </select>
+                  <span>Results</span>
+                </div>
+                <div className="pagination-controls">
+                  <button className="page-btn" onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}>←</button>
+                  <button className="page-btn active">{currentPage}</button>
+                  <button className="page-btn" onClick={() => setCurrentPage(currentPage + 1)}>→</button>
+                </div>
+              </div>
+            </>
+          )}
 
           <footer className="dashboard-footer">
             2025 © Fuchsius, All Rights Reserved
           </footer>
         </div>
       </div>
+
+      <AddAppointmentModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchAppointments}
+      />
     </div>
   );
 };
