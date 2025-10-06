@@ -21,7 +21,7 @@ const Patients = () => {
     try {
       setLoading(true);
       const response = await patientAPI.getAll();
-      console.log('Fetched patients:', response.data); // Debug log
+      console.log('Fetched patients:', response.data);
       setPatients(response.data || []);
     } catch (error) {
       console.error('Error fetching patients:', error);
@@ -55,9 +55,16 @@ const Patients = () => {
   };
 
   const getPatientImage = (patient) => {
-    // Check if imageUrl exists and is a base64 string or URL
+    // Check if imageUrl exists
     if (patient.imageUrl) {
-      console.log('Patient has imageUrl:', `${patient.firstName} ${patient.lastName}`, patient.imageUrl.substring(0, 50)); // Debug
+      // If it's a relative path (starts with /uploads/)
+      if (patient.imageUrl.startsWith('/uploads/')) {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        const fullUrl = `${API_URL}${patient.imageUrl}`;
+        console.log('Patient image URL:', patient.firstName, fullUrl);
+        return fullUrl;
+      }
+      // If it's already a full URL or base64
       return patient.imageUrl;
     }
     // Fallback to avatar placeholder

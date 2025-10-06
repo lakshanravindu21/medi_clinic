@@ -16,7 +16,6 @@ const getPatients = async (req, res, next) => {
   try {
     const { search, status } = req.query;
 
-    // Build filter
     const where = {};
 
     if (search) {
@@ -213,7 +212,6 @@ const updatePatient = async (req, res, next) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    // Check if patient exists
     const existingPatient = await prisma.patient.findUnique({
       where: { id }
     });
@@ -225,7 +223,6 @@ const updatePatient = async (req, res, next) => {
       });
     }
 
-    // Convert dob to Date if provided
     if (updateData.dob) {
       updateData.dob = new Date(updateData.dob);
     }
@@ -287,7 +284,6 @@ const deletePatient = async (req, res, next) => {
       }
     }
 
-    // Delete patient (will also delete user due to cascade)
     await prisma.patient.delete({
       where: { id }
     });
@@ -307,6 +303,8 @@ const deletePatient = async (req, res, next) => {
 const uploadImage = async (req, res, next) => {
   try {
     const { image } = req.body;
+
+    console.log('Upload image request received'); // Debug log
 
     if (!image) {
       return res.status(400).json({
@@ -343,9 +341,13 @@ const uploadImage = async (req, res, next) => {
     const imageBuffer = Buffer.from(base64Data, 'base64');
     fs.writeFileSync(filePath, imageBuffer);
 
+    console.log('Image saved to:', filePath); // Debug log
+
     // Return URL path
     const imageUrl = `/uploads/patients/${fileName}`;
     
+    console.log('Returning imageUrl:', imageUrl); // Debug log
+
     res.json({
       success: true,
       imageUrl: imageUrl
@@ -354,7 +356,8 @@ const uploadImage = async (req, res, next) => {
     console.error('Upload error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to upload image'
+      message: 'Failed to upload image',
+      error: error.message
     });
   }
 };
