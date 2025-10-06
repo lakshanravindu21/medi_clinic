@@ -10,7 +10,7 @@ const api = axios.create({
   }
 });
 
-// Request interceptor - Add token to requests
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -24,24 +24,22 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor - Handle errors
+// Response interceptor
 api.interceptors.response.use(
-  (response) => response.data, // Return only data
+  (response) => response.data,
   (error) => {
-    // Handle authentication errors
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
     
-    // Return error message
     const message = error.response?.data?.message || 'An error occurred';
     return Promise.reject(new Error(message));
   }
 );
 
-// Auth API calls
+// Auth API
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
@@ -51,7 +49,7 @@ export const authAPI = {
   resetPassword: (data) => api.post('/auth/reset-password', data)
 };
 
-// Doctor API calls
+// Doctor API
 export const doctorAPI = {
   getAll: (params) => api.get('/doctors', { params }),
   getOne: (id) => api.get(`/doctors/${id}`),
@@ -60,7 +58,16 @@ export const doctorAPI = {
   delete: (id) => api.delete(`/doctors/${id}`)
 };
 
-// Appointment API calls
+// Patient API
+export const patientAPI = {
+  getAll: (params) => api.get('/patients', { params }),
+  getOne: (id) => api.get(`/patients/${id}`),
+  create: (data) => api.post('/patients', data),
+  update: (id, data) => api.put(`/patients/${id}`, data),
+  delete: (id) => api.delete(`/patients/${id}`)
+};
+
+// Appointment API
 export const appointmentAPI = {
   getAll: (params) => api.get('/appointments', { params }),
   getOne: (id) => api.get(`/appointments/${id}`),

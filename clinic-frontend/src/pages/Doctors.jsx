@@ -1,100 +1,66 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../components/layout/Header';
 import Sidebar from '../components/layout/Sidebar';
 import AddDoctorModal from '../components/AddDoctorModal';
 import { AiOutlineMore } from 'react-icons/ai';
+import { doctorAPI } from '../utils/api';
 import '../styles/doctors.css';
 
 const Doctors = () => {
-  const [doctors] = useState([
-    { 
-      id: 1,
-      name: 'Dr. Mick Thompson', 
-      specialty: 'Cardiologist',
-      available: 'Mon, 20 Jan 2025',
-      image: 'https://ui-avatars.com/api/?name=Mick+Thompson&background=4F46E5&color=fff'
-    },
-    { 
-      id: 2,
-      name: 'Dr. Sarah Johnson', 
-      specialty: 'Orthopedic Surgeon',
-      available: 'Wed, 22 Jan 2025',
-      image: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=10B981&color=fff'
-    },
-    { 
-      id: 3,
-      name: 'Dr. Emily Carter', 
-      specialty: 'Pediatrician',
-      available: 'Fri, 24 Jan 2025',
-      image: 'https://ui-avatars.com/api/?name=Emily+Carter&background=F59E0B&color=fff'
-    },
-    { 
-      id: 4,
-      name: 'Dr. David Lee', 
-      specialty: 'Gynecologist',
-      available: 'Tue, 21 Jan 2025',
-      image: 'https://ui-avatars.com/api/?name=David+Lee&background=8B5CF6&color=fff'
-    },
-    { 
-      id: 5,
-      name: 'Dr. Anna Kim', 
-      specialty: 'Psychiatrist',
-      available: 'Mon, 27 Jan 2025',
-      image: 'https://ui-avatars.com/api/?name=Anna+Kim&background=EC4899&color=fff'
-    },
-    { 
-      id: 6,
-      name: 'Dr. John Smith', 
-      specialty: 'Neurosurgeon',
-      available: 'Mon, 27 Jan 2025',
-      image: 'https://ui-avatars.com/api/?name=John+Smith&background=06B6D4&color=fff'
-    },
-    { 
-      id: 7,
-      name: 'Dr. Lisa White', 
-      specialty: 'Oncologist',
-      available: 'Sat, 25 Jan 2025',
-      image: 'https://ui-avatars.com/api/?name=Lisa+White&background=14B8A6&color=fff'
-    },
-    { 
-      id: 8,
-      name: 'Dr. Patricia Brown', 
-      specialty: 'Pulmonologist',
-      available: 'Sun, 01 Feb 2025',
-      image: 'https://ui-avatars.com/api/?name=Patricia+Brown&background=F97316&color=fff'
-    },
-    { 
-      id: 9,
-      name: 'Dr. Rachel Green', 
-      specialty: 'Urologist',
-      available: 'Tue, 28 Jan 2025',
-      image: 'https://ui-avatars.com/api/?name=Rachel+Green&background=84CC16&color=fff'
-    },
-    { 
-      id: 10,
-      name: 'Dr. Michael Smith', 
-      specialty: 'Cardiologist',
-      available: 'Thu, 05 Feb 2025',
-      image: 'https://ui-avatars.com/api/?name=Michael+Smith&background=6366F1&color=fff'
-    },
-    { 
-      id: 11,
-      name: 'Dr. Sarah Johnson', 
-      specialty: 'Surgeon',
-      available: 'Mon, 09 Feb 2025',
-      image: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=22D3EE&color=fff'
-    },
-    { 
-      id: 12,
-      name: 'Dr. Adrian White', 
-      specialty: 'Practitioner',
-      available: 'Sat, 25 Jan 2025',
-      image: 'https://ui-avatars.com/api/?name=Adrian+White&background=A855F7&color=fff'
-    },
-  ]);
-
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchDoctors();
+  }, []);
+
+  const fetchDoctors = async () => {
+    try {
+      setLoading(true);
+      const response = await doctorAPI.getAll();
+      console.log('Fetched doctors:', response.data); // Debug log
+      setDoctors(response.data || []);
+    } catch (error) {
+      console.error('Error fetching doctors:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (doctorId) => {
+    if (window.confirm('Are you sure you want to delete this doctor?')) {
+      try {
+        await doctorAPI.delete(doctorId);
+        fetchDoctors();
+        setShowMenu(null);
+      } catch (error) {
+        console.error('Error deleting doctor:', error);
+        alert('Failed to delete doctor');
+      }
+    }
+  };
+
+  const formatAvailability = (availability) => {
+    try {
+      const parsed = JSON.parse(availability);
+      const days = Object.keys(parsed);
+      return days.length > 0 ? days.join(', ') : 'Not specified';
+    } catch {
+      return 'Not specified';
+    }
+  };
+
+  const getDoctorImage = (doctor) => {
+    // Check if imageUrl exists and is a base64 string or URL
+    if (doctor.imageUrl) {
+      console.log('Doctor has imageUrl:', doctor.name, doctor.imageUrl.substring(0, 50)); // Debug
+      return doctor.imageUrl;
+    }
+    // Fallback to avatar placeholder
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=random&size=200`;
+  };
 
   return (
     <div className="dashboard-layout">
@@ -107,7 +73,7 @@ const Doctors = () => {
           <div className="doctors-header">
             <div>
               <h1>Doctor Grid</h1>
-              <span className="total-badge">Total Doctors : 565</span>
+              <span className="total-badge">Total Doctors : {doctors.length}</span>
             </div>
             <button 
               className="add-doctor-btn"
@@ -117,30 +83,45 @@ const Doctors = () => {
             </button>
           </div>
 
-          <div className="doctors-grid">
-            {doctors.map((doctor) => (
-              <div key={doctor.id} className="doctor-card">
-                <div className="doctor-card-header">
-                  <img src={doctor.image} alt={doctor.name} />
-                  <button 
-                    className="menu-btn"
-                    onClick={() => setShowMenu(showMenu === doctor.id ? null : doctor.id)}
-                  >
-                    <AiOutlineMore size={20} />
-                  </button>
-                  {showMenu === doctor.id && (
-                    <div className="dropdown-menu">
-                      <button>Edit</button>
-                      <button>Delete</button>
-                    </div>
-                  )}
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>Loading doctors...</div>
+          ) : doctors.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+              No doctors found. Add your first doctor!
+            </div>
+          ) : (
+            <div className="doctors-grid">
+              {doctors.map((doctor) => (
+                <div key={doctor.id} className="doctor-card">
+                  <div className="doctor-card-header">
+                    <img 
+                      src={getDoctorImage(doctor)} 
+                      alt={doctor.name}
+                      onError={(e) => {
+                        console.error('Image failed to load for:', doctor.name);
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(doctor.name)}&background=random&size=200`;
+                      }}
+                    />
+                    <button 
+                      className="menu-btn"
+                      onClick={() => setShowMenu(showMenu === doctor.id ? null : doctor.id)}
+                    >
+                      <AiOutlineMore size={20} />
+                    </button>
+                    {showMenu === doctor.id && (
+                      <div className="dropdown-menu">
+                        <button onClick={() => alert('Edit functionality coming soon')}>Edit</button>
+                        <button onClick={() => handleDelete(doctor.id)}>Delete</button>
+                      </div>
+                    )}
+                  </div>
+                  <h3>{doctor.name}</h3>
+                  <p className="specialty">{doctor.specialization}</p>
+                  <p className="available">Available: {formatAvailability(doctor.availability)}</p>
                 </div>
-                <h3>{doctor.name}</h3>
-                <p className="specialty">{doctor.specialty}</p>
-                <p className="available">Available : {doctor.available}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <footer className="dashboard-footer">
             2025 © Fuchsius, All Rights Reserved
@@ -150,7 +131,8 @@ const Doctors = () => {
 
       <AddDoctorModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchDoctors}
       />
     </div>
   );

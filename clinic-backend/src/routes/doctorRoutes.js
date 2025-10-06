@@ -5,7 +5,8 @@ const {
   getDoctor,
   createDoctor,
   updateDoctor,
-  deleteDoctor
+  deleteDoctor,
+  uploadImage
 } = require('../controllers/doctorController');
 const { protect, adminOnly } = require('../middleware/auth');
 const { validateDoctor } = require('../middleware/validation');
@@ -15,6 +16,7 @@ router.get('/', getDoctors);
 router.get('/:id', getDoctor);
 
 // Protected routes (Admin only)
+router.post('/upload-image', protect, adminOnly, uploadImage);
 router.post('/', protect, adminOnly, validateDoctor, createDoctor);
 router.put('/:id', protect, adminOnly, validateDoctor, updateDoctor);
 router.delete('/:id', protect, adminOnly, deleteDoctor);

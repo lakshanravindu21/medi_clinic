@@ -1,9 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
-  // ❌ removed custom output to avoid mismatch
 }
 
 datasource db {
@@ -36,24 +34,70 @@ model User {
 
   // Relations
   appointments Appointment[]
+  patientProfile Patient?
   
   @@map("users")
 }
 
-model Doctor {
+model Patient {
   id             String   @id @default(uuid())
-  name           String
-  email          String   @unique
-  specialization String
-  description    String?
+  userId         String   @unique
+  firstName      String
+  lastName       String
+  phone          String
+  email          String
+  primaryDoctorId String?
+  dob            DateTime?
+  gender         String?
+  bloodGroup     String?
+  status         String   @default("Active")
+  address1       String?
+  address2       String?
+  country        String?
+  city           String?
+  state          String?
+  pincode        String?
   imageUrl       String?
-  phone          String?
-  availability   String   @default("{}") // JSON string for availability schedule
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   // Relations
-  appointments Appointment[]
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  primaryDoctor  Doctor?  @relation(fields: [primaryDoctorId], references: [id])
+  
+  @@map("patients")
+}
+
+model Doctor {
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  phone           String?
+  specialization  String
+  department      String?
+  designation     String?
+  description     String?
+  bio             String?
+  imageUrl        String?
+  dob             DateTime?
+  yearOfExperience Int?
+  medicalLicense  String?
+  languagesSpoken String?  // JSON string
+  bloodGroup      String?
+  gender          String?
+  address1        String?
+  address2        String?
+  country         String?
+  city            String?
+  state           String?
+  pincode         String?
+  availability    String   @default("{}") // JSON string
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  appointments    Appointment[]
+  patients        Patient[]
   
   @@map("doctors")
 }

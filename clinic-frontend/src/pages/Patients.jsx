@@ -1,125 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../components/layout/Header';
 import Sidebar from '../components/layout/Sidebar';
 import AddPatientModal from '../components/AddPatientModal';
 import { AiOutlineMore, AiOutlineCalendar } from 'react-icons/ai';
 import { MdLocationOn } from 'react-icons/md';
+import { patientAPI } from '../utils/api';
 import '../styles/patients.css';
 
 const Patients = () => {
-  const [patients] = useState([
-    { 
-      id: 1,
-      name: 'Marsha Noland',
-      age: 25,
-      gender: 'Female',
-      lastAppointment: 'Thu, 27 Mar 2025',
-      location: 'Kurunegala',
-      image: 'https://ui-avatars.com/api/?name=Marsha+Noland&background=F472B6&color=fff'
-    },
-    { 
-      id: 2,
-      name: 'Irma Armstrong',
-      age: 32,
-      gender: 'Female',
-      lastAppointment: 'Thu, 12 Mar 2025',
-      location: 'Kurunegala',
-      image: 'https://ui-avatars.com/api/?name=Irma+Armstrong&background=FCA5A5&color=fff'
-    },
-    { 
-      id: 3,
-      name: 'Jesus Adams',
-      age: 27,
-      gender: 'Male',
-      lastAppointment: 'Fri, 05 Mar 2025',
-      location: 'Kurunegala',
-      image: 'https://ui-avatars.com/api/?name=Jesus+Adams&background=FB923C&color=fff'
-    },
-    { 
-      id: 4,
-      name: 'Ezra Belcher',
-      age: 28,
-      gender: 'Male',
-      lastAppointment: 'Sat, 24 Feb 2025',
-      location: 'Kurunegala',
-      image: 'https://ui-avatars.com/api/?name=Ezra+Belcher&background=FBBF24&color=fff'
-    },
-    { 
-      id: 5,
-      name: 'Glen Lentz',
-      age: 22,
-      gender: 'Male',
-      lastAppointment: 'Sat, 16 Feb 2025',
-      location: 'Kurunegala',
-      image: 'https://ui-avatars.com/api/?name=Glen+Lentz&background=A3E635&color=fff'
-    },
-    { 
-      id: 6,
-      name: 'Bernard Griffith',
-      age: 34,
-      gender: 'Male',
-      lastAppointment: 'Tue, 01 Feb 2025',
-      location: 'Kurunegala',
-      image: 'https://ui-avatars.com/api/?name=Bernard+Griffith&background=22D3EE&color=fff'
-    },
-    { 
-      id: 7,
-      name: 'John Elsass',
-      age: 23,
-      gender: 'Male',
-      lastAppointment: 'Mon, 25 Jan 2025',
-      location: 'Malabe',
-      image: 'https://ui-avatars.com/api/?name=John+Elsass&background=93C5FD&color=fff'
-    },
-    { 
-      id: 8,
-      name: 'Martin Lisa',
-      age: 26,
-      gender: 'Female',
-      lastAppointment: 'Thu, 22 Jan 2025',
-      location: 'Malabe',
-      image: 'https://ui-avatars.com/api/?name=Martin+Lisa&background=C084FC&color=fff'
-    },
-    { 
-      id: 9,
-      name: 'Ava Mitchell',
-      age: 25,
-      gender: 'Female',
-      lastAppointment: 'Sat, 18 Jan 2025',
-      location: 'Malabe',
-      image: 'https://ui-avatars.com/api/?name=Ava+Mitchell&background=F9A8D4&color=fff'
-    },
-    { 
-      id: 10,
-      name: 'Noah Davis',
-      age: 32,
-      gender: 'Male',
-      lastAppointment: 'Wed, 15 Jan 2025',
-      location: 'Malabe',
-      image: 'https://ui-avatars.com/api/?name=Noah+Davis&background=FDE68A&color=fff'
-    },
-    { 
-      id: 11,
-      name: 'Emily Ross',
-      age: 29,
-      gender: 'Female',
-      lastAppointment: 'Fri, 10 Jan 2025',
-      location: 'Malabe',
-      image: 'https://ui-avatars.com/api/?name=Emily+Ross&background=99F6E4&color=fff'
-    },
-    { 
-      id: 12,
-      name: 'Ryan Anderson',
-      age: 30,
-      gender: 'Male',
-      lastAppointment: 'Tue, 04 Jan 2025',
-      location: 'Malabe',
-      image: 'https://ui-avatars.com/api/?name=Ryan+Anderson&background=FCA5A5&color=fff'
-    },
-  ]);
-
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  const fetchPatients = async () => {
+    try {
+      setLoading(true);
+      const response = await patientAPI.getAll();
+      console.log('Fetched patients:', response.data); // Debug log
+      setPatients(response.data || []);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (patientId) => {
+    if (window.confirm('Are you sure you want to delete this patient?')) {
+      try {
+        await patientAPI.delete(patientId);
+        fetchPatients();
+        setShowMenu(null);
+      } catch (error) {
+        console.error('Error deleting patient:', error);
+        alert('Failed to delete patient');
+      }
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
+
+  const getPatientImage = (patient) => {
+    // Check if imageUrl exists and is a base64 string or URL
+    if (patient.imageUrl) {
+      console.log('Patient has imageUrl:', `${patient.firstName} ${patient.lastName}`, patient.imageUrl.substring(0, 50)); // Debug
+      return patient.imageUrl;
+    }
+    // Fallback to avatar placeholder
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(patient.firstName + ' ' + patient.lastName)}&background=random&size=150`;
+  };
 
   return (
     <div className="dashboard-layout">
@@ -132,7 +75,7 @@ const Patients = () => {
           <div className="patients-header">
             <div>
               <h1>Patient Grid</h1>
-              <span className="total-badge">Total Patients : 565</span>
+              <span className="total-badge">Total Patients : {patients.length}</span>
             </div>
             <button 
               className="add-patient-btn"
@@ -142,46 +85,61 @@ const Patients = () => {
             </button>
           </div>
 
-          <div className="patients-grid">
-            {patients.map((patient) => (
-              <div key={patient.id} className="patient-card">
-                <div className="patient-card-header">
-                  <div className="patient-info">
-                    <img src={patient.image} alt={patient.name} />
-                    <button 
-                      className="menu-btn"
-                      onClick={() => setShowMenu(showMenu === patient.id ? null : patient.id)}
-                    >
-                      <AiOutlineMore size={20} />
-                    </button>
-                    {showMenu === patient.id && (
-                      <div className="dropdown-menu">
-                        <button>Edit</button>
-                        <button>Delete</button>
-                      </div>
-                    )}
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px' }}>Loading patients...</div>
+          ) : patients.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+              No patients found. Add your first patient!
+            </div>
+          ) : (
+            <div className="patients-grid">
+              {patients.map((patient) => (
+                <div key={patient.id} className="patient-card">
+                  <div className="patient-card-header">
+                    <div className="patient-info">
+                      <img 
+                        src={getPatientImage(patient)} 
+                        alt={`${patient.firstName} ${patient.lastName}`}
+                        onError={(e) => {
+                          console.error('Image failed to load for:', `${patient.firstName} ${patient.lastName}`);
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(patient.firstName + ' ' + patient.lastName)}&background=random&size=150`;
+                        }}
+                      />
+                      <button 
+                        className="menu-btn"
+                        onClick={() => setShowMenu(showMenu === patient.id ? null : patient.id)}
+                      >
+                        <AiOutlineMore size={20} />
+                      </button>
+                      {showMenu === patient.id && (
+                        <div className="dropdown-menu">
+                          <button onClick={() => alert('Edit functionality coming soon')}>Edit</button>
+                          <button onClick={() => handleDelete(patient.id)}>Delete</button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="patient-details">
+                      <h3>{patient.firstName} {patient.lastName}</h3>
+                      <p className="patient-meta">
+                        {patient.dob ? new Date().getFullYear() - new Date(patient.dob).getFullYear() : 'N/A'}, {patient.gender || 'N/A'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="patient-details">
-                    <h3>{patient.name}</h3>
-                    <p className="patient-meta">{patient.age}, {patient.gender}</p>
+                  <div className="patient-card-body">
+                    <div className="info-row">
+                      <AiOutlineCalendar className="info-icon" />
+                      <span className="info-label">Last Appointment :</span>
+                      <span className="info-value">{formatDate(patient.createdAt)}</span>
+                    </div>
+                    <div className="info-row">
+                      <MdLocationOn className="info-icon" />
+                      <span className="info-value">{patient.city || 'N/A'}</span>
+                    </div>
                   </div>
                 </div>
-                <div className="patient-card-body">
-                  <div className="info-row">
-                    <AiOutlineCalendar className="info-icon" />
-                    <span className="info-label">Last Appointment :</span>
-                    <span className="info-value">{patient.lastAppointment}</span>
-                  </div>
-                  <div className="info-row">
-                    <MdLocationOn className="info-icon" />
-                    <span className="info-value">{patient.location}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button className="load-more-btn">Load More ↻</button>
+              ))}
+            </div>
+          )}
 
           <footer className="dashboard-footer">
             2025 © Fuchsius, All Rights Reserved
@@ -191,7 +149,8 @@ const Patients = () => {
 
       <AddPatientModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchPatients}
       />
     </div>
   );

@@ -1,5 +1,4 @@
 const { PrismaClient } = require('@prisma/client');
-
 const prisma = new PrismaClient();
 
 // @desc    Get all doctors
@@ -8,8 +7,6 @@ const prisma = new PrismaClient();
 const getDoctors = async (req, res, next) => {
   try {
     const { specialization, search } = req.query;
-
-    // Build filter object
     const where = {};
 
     if (specialization) {
@@ -86,16 +83,66 @@ const getDoctor = async (req, res, next) => {
 // @access  Private/Admin
 const createDoctor = async (req, res, next) => {
   try {
-    const { name, email, specialization, description, imageUrl, phone, availability } = req.body;
+    const { 
+      name, 
+      email, 
+      specialization, 
+      department,
+      designation,
+      description, 
+      bio,
+      imageUrl, 
+      phone, 
+      dob,
+      yearOfExperience,
+      medicalLicense,
+      languagesSpoken,
+      bloodGroup,
+      gender,
+      address1,
+      address2,
+      country,
+      city,
+      state,
+      pincode,
+      availability 
+    } = req.body;
+
+    // Check if email already exists
+    const existingDoctor = await prisma.doctor.findUnique({
+      where: { email }
+    });
+
+    if (existingDoctor) {
+      return res.status(400).json({
+        success: false,
+        message: 'Doctor with this email already exists'
+      });
+    }
 
     const doctor = await prisma.doctor.create({
       data: {
         name,
         email,
         specialization,
+        department: department || null,
+        designation: designation || null,
         description: description || null,
+        bio: bio || null,
         imageUrl: imageUrl || null,
         phone: phone || null,
+        dob: dob ? new Date(dob) : null,
+        yearOfExperience: yearOfExperience ? parseInt(yearOfExperience) : null,
+        medicalLicense: medicalLicense || null,
+        languagesSpoken: languagesSpoken || null,
+        bloodGroup: bloodGroup || null,
+        gender: gender || null,
+        address1: address1 || null,
+        address2: address2 || null,
+        country: country || null,
+        city: city || null,
+        state: state || null,
+        pincode: pincode || null,
         availability: availability || '{}'
       }
     });
@@ -116,7 +163,7 @@ const createDoctor = async (req, res, next) => {
 const updateDoctor = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, email, specialization, description, imageUrl, phone, availability } = req.body;
+    const updateData = { ...req.body };
 
     // Check if doctor exists
     const existingDoctor = await prisma.doctor.findUnique({
@@ -130,17 +177,19 @@ const updateDoctor = async (req, res, next) => {
       });
     }
 
+    // Convert dob to Date if provided
+    if (updateData.dob) {
+      updateData.dob = new Date(updateData.dob);
+    }
+
+    // Convert yearOfExperience to number if provided
+    if (updateData.yearOfExperience) {
+      updateData.yearOfExperience = parseInt(updateData.yearOfExperience);
+    }
+
     const doctor = await prisma.doctor.update({
       where: { id },
-      data: {
-        name,
-        email,
-        specialization,
-        description,
-        imageUrl,
-        phone,
-        availability
-      }
+      data: updateData
     });
 
     res.json({
@@ -160,7 +209,6 @@ const deleteDoctor = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Check if doctor exists
     const existingDoctor = await prisma.doctor.findUnique({
       where: { id }
     });
@@ -185,10 +233,47 @@ const deleteDoctor = async (req, res, next) => {
   }
 };
 
+// @desc    Upload doctor image
+// @route   POST /api/doctors/upload-image
+// @access  Private/Admin
+const uploadImage = async (req, res, next) => {
+  try {
+    const { image } = req.body;
+
+    if (!image) {
+      return res.status(400).json({
+        success: false,
+        message: 'No image provided'
+      });
+    }
+
+    // Validate base64 image format
+    if (!image.startsWith('data:image/')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid image format'
+      });
+    }
+
+    // In development, we return the base64 string directly
+    // In production, you would upload to cloud storage (Cloudinary, S3, etc.)
+    // and return the URL
+    
+    res.json({
+      success: true,
+      imageUrl: image  // Return the base64 string as imageUrl
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    next(error);
+  }
+};
+
 module.exports = {
   getDoctors,
   getDoctor,
   createDoctor,
   updateDoctor,
-  deleteDoctor
+  deleteDoctor,
+  uploadImage
 };
