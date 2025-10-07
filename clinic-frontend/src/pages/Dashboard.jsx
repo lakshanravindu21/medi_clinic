@@ -161,7 +161,8 @@ const Dashboard = () => {
       month: i,
       completed: 0,
       ongoing: 0,
-      rescheduled: 0
+      rescheduled: 0,
+      cancelled: 0
     }));
 
     appointments.forEach(apt => {
@@ -174,6 +175,8 @@ const Dashboard = () => {
           monthlyData[month].ongoing++;
         } else if (apt.status === 'RESCHEDULED') {
           monthlyData[month].rescheduled++;
+        } else if (apt.status === 'CANCELED') {
+          monthlyData[month].cancelled++;
         }
       }
     });
@@ -271,7 +274,7 @@ const Dashboard = () => {
 
   const getMaxValue = () => {
     const max = Math.max(...monthlyStats.map(m => 
-      m.completed + m.ongoing + m.rescheduled
+      m.completed + m.ongoing + m.rescheduled + m.cancelled
     ));
     return Math.max(max, 10);
   };
@@ -469,58 +472,31 @@ const Dashboard = () => {
           <div className="stats-grid">
             <div className="stat-card">
               <div className="stat-icon doctors-icon">
-                <AiOutlineUser size={24} />
+                <AiOutlineUser size={28} />
               </div>
-              <div className="stat-info">
-                <p className="stat-label">Doctors</p>
+              <div className="stat-content">
+                <p className="stat-label">Total Doctors</p>
                 <h3 className="stat-value">{stats.doctors.count}</h3>
-              </div>
-              <div className="stat-trend positive">
-                <span className="trend-badge">{stats.doctors.trend}</span>
-                <span className="trend-label">in last 7 Days</span>
-              </div>
-              <div className="stat-chart">
-                {[40, 55, 45, 60, 50, 70, 65].map((height, i) => (
-                  <div key={i} className="chart-bar" style={{ height: `${height}%` }}></div>
-                ))}
               </div>
             </div>
 
             <div className="stat-card">
               <div className="stat-icon patients-icon">
-                <AiOutlineTeam size={24} />
+                <AiOutlineTeam size={28} />
               </div>
-              <div className="stat-info">
-                <p className="stat-label">Patients</p>
+              <div className="stat-content">
+                <p className="stat-label">Total Patients</p>
                 <h3 className="stat-value">{stats.patients.count}</h3>
-              </div>
-              <div className="stat-trend positive">
-                <span className="trend-badge">{stats.patients.trend}</span>
-                <span className="trend-label">in last 7 Days</span>
-              </div>
-              <div className="stat-chart orange">
-                {[45, 60, 55, 70, 65, 75, 70].map((height, i) => (
-                  <div key={i} className="chart-bar" style={{ height: `${height}%` }}></div>
-                ))}
               </div>
             </div>
 
             <div className="stat-card">
               <div className="stat-icon appointments-icon">
-                <AiOutlineCalendar size={24} />
+                <AiOutlineCalendar size={28} />
               </div>
-              <div className="stat-info">
-                <p className="stat-label">Appointment</p>
+              <div className="stat-content">
+                <p className="stat-label">Total Appointments</p>
                 <h3 className="stat-value">{stats.appointments.count}</h3>
-              </div>
-              <div className="stat-trend positive">
-                <span className="trend-badge">{stats.appointments.trend}</span>
-                <span className="trend-label">in last 7 Days</span>
-              </div>
-              <div className="stat-chart cyan">
-                {[60, 70, 65, 55, 60, 65, 70].map((height, i) => (
-                  <div key={i} className="chart-bar" style={{ height: `${height}%` }}></div>
-                ))}
               </div>
             </div>
           </div>
@@ -574,10 +550,10 @@ const Dashboard = () => {
                 <div className="chart-bars">
                   {monthlyStats.map((data, i) => {
                     const maxVal = getMaxValue();
-                    const total = data.completed + data.ongoing + data.rescheduled;
                     const completedHeight = maxVal > 0 ? (data.completed / maxVal) * 100 : 0;
                     const ongoingHeight = maxVal > 0 ? (data.ongoing / maxVal) * 100 : 0;
                     const rescheduledHeight = maxVal > 0 ? (data.rescheduled / maxVal) * 100 : 0;
+                    const cancelledHeight = maxVal > 0 ? (data.cancelled / maxVal) * 100 : 0;
 
                     return (
                       <div key={i} className="bar-group">
@@ -590,6 +566,9 @@ const Dashboard = () => {
                           )}
                           {rescheduledHeight > 0 && (
                             <div className="bar rescheduled" style={{ height: `${rescheduledHeight}%` }}></div>
+                          )}
+                          {cancelledHeight > 0 && (
+                            <div className="bar cancelled" style={{ height: `${cancelledHeight}%` }}></div>
                           )}
                         </div>
                         <span className="bar-label">{monthNames[i].slice(0, 3)}</span>
@@ -611,6 +590,10 @@ const Dashboard = () => {
                 <div className="legend-item">
                   <span className="legend-color rescheduled"></span>
                   <span>Rescheduled</span>
+                </div>
+                <div className="legend-item">
+                  <span className="legend-color cancelled"></span>
+                  <span>Cancelled</span>
                 </div>
               </div>
             </div>
